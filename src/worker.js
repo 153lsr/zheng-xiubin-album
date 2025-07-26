@@ -2401,7 +2401,7 @@ async function handleUpload(request, env) {
         // 生成唯一文件名
         const timestamp = Date.now();
         const randomStr = Math.random().toString(36).substr(2, 9);
-        const fileName = \`\${timestamp}_\${randomStr}.\${fileExtension}\`;
+        const fileName = timestamp + '_' + randomStr + '.' + fileExtension;
         
         console.log('Uploading file to R2:', fileName);
         
