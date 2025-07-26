@@ -6,6 +6,7 @@
     <title>郑秀彬专属相册集</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* ... 你的CSS样式保持不变 ... */
         * {
             margin: 0;
             padding: 0;
@@ -22,6 +23,8 @@
             overflow-x: hidden;
         }
 
+        /* ... 其他CSS样式保持不变 ... */
+        
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -1233,6 +1236,13 @@
             display: none;
         }
 
+        .upload-error {
+            color: #ff4757;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
         footer {
             text-align: center;
             padding: 40px 20px;
@@ -1677,6 +1687,7 @@
                         <label for="edit-title"><i class="fas fa-heading"></i> 图片标题:</label>
                         <input type="text" id="edit-title" required placeholder="给这张美美的照片起个名字吧~">
                         <div class="error-message" id="title-error">图片名称已存在，请使用其他名称</div>
+                        <div class="upload-error" id="upload-error"></div>
                     </div>
                     <div class="edit-form-group">
                         <label for="edit-desc"><i class="fas fa-align-left"></i> 图片描述:</label>
@@ -1818,6 +1829,7 @@
         const editCancel = document.getElementById('edit-cancel');
         const progressBar = document.getElementById('progress-bar');
         const titleError = document.getElementById('title-error');
+        const uploadError = document.getElementById('upload-error');
 
         // 密码弹窗元素
         const passwordModal = document.getElementById('password-modal');
@@ -1871,7 +1883,150 @@
             
             // 渲染相册
             renderAlbums();
+            
+            // 绑定事件
+            bindEventListeners();
         });
+
+        // 绑定所有事件监听器
+        function bindEventListeners() {
+            // 基本事件
+            profileCard.addEventListener('click', function() {
+                this.classList.toggle('flipped');
+            });
+            
+            closeLightbox.addEventListener('click', closeLightboxFunc);
+            likeBtn.addEventListener('click', likeAlbum);
+            toggleDanmuBtn.addEventListener('click', toggleDanmu);
+            danmuSubmit.addEventListener('click', sendDanmu);
+            danmuInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendDanmu();
+                }
+            });
+            prevBtn.addEventListener('click', showPrevImage);
+            nextBtn.addEventListener('click', showNextImage);
+            imageCard.addEventListener('click', flipImageCard);
+
+            // 上传相关事件
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.background = 'rgba(255, 215, 0, 0.3)';
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.style.background = 'rgba(255, 255, 255, 0.7)';
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.background = 'rgba(255, 255, 255, 0.7)';
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect(files[0]);
+                }
+            });
+
+            uploadArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    handleFileSelect(this.files[0]);
+                }
+            });
+
+            uploadBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+
+            // 编辑表单事件
+            editCancel.addEventListener('click', closeEditModal);
+            
+            // 修复后的上传表单提交
+            editForm.addEventListener('submit', handleUploadSubmit);
+
+            // 筛选功能
+            applyFilterBtn.addEventListener('click', applyFilters);
+            resetFilterBtn.addEventListener('click', resetFilters);
+
+            // 公告编辑事件
+            document.getElementById('edit-announcement-btn').addEventListener('click', () => {
+                showPasswordModal('announcement');
+            });
+
+            document.getElementById('close-announcement-btn').addEventListener('click', () => {
+                document.getElementById('announcement-float').style.display = 'none';
+            });
+
+            document.getElementById('announcement-save').addEventListener('click', saveAnnouncement);
+            document.getElementById('announcement-cancel').addEventListener('click', hideEditAnnouncementModal);
+
+            // 密码弹窗事件
+            passwordConfirm.addEventListener('click', verifyPassword);
+            passwordCancel.addEventListener('click', hidePasswordModal);
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    verifyPassword();
+                }
+            });
+
+            // 登录弹窗事件
+            loginConfirm.addEventListener('click', login);
+            loginCancel.addEventListener('click', hideLoginModal);
+            loginPassword.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    login();
+                }
+            });
+
+            // 点击背景关闭弹窗
+            document.querySelectorAll('.login-modal, .password-modal, .announcement-modal, .edit-modal').forEach(modal => {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.classList.remove('active');
+                        document.body.style.overflow = 'auto';
+                        // 重置相关状态
+                        if (this.classList.contains('edit-modal')) {
+                            closeEditModal();
+                        }
+                    }
+                });
+            });
+
+            // ESC键关闭弹窗
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeLightboxFunc();
+                    hidePasswordModal();
+                    hideEditAnnouncementModal();
+                    hideLoginModal();
+                    closeEditModal();
+                }
+            });
+
+            // 鼠标滚轮缩放图片
+            lightboxImg.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                const zoomIntensity = 0.1;
+                const mouseX = e.clientX - lightboxImg.getBoundingClientRect().left;
+                const mouseY = e.clientY - lightboxImg.getBoundingClientRect().top;
+                
+                if (e.deltaY < 0) {
+                    // 放大
+                    scale *= (1 + zoomIntensity);
+                } else {
+                    // 缩小
+                    scale *= (1 - zoomIntensity);
+                    if (scale < 1) scale = 1;
+                }
+                
+                updateImageTransform();
+                isZoomed = scale > 1;
+            });
+        }
 
         // 加载相册数据
         async function loadAlbums() {
@@ -1881,12 +2036,10 @@
                     albums = await response.json();
                 } else {
                     console.error('加载相册失败:', response.status);
-                    // 使用默认数据作为后备
                     albums = [];
                 }
             } catch (error) {
                 console.error('加载相册失败:', error);
-                // 使用默认数据作为后备
                 albums = [];
             }
         }
@@ -1964,11 +2117,6 @@
             alert('已退出管理员账户');
         }
 
-        // 翻转头像卡片
-        profileCard.addEventListener('click', function() {
-            this.classList.toggle('flipped');
-        });
-
         // 渲染相册
         function renderAlbums(filteredAlbums = albums) {
             gallery.innerHTML = '';
@@ -2019,10 +2167,8 @@
                 deleteBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (isAdmin) {
-                        // 管理员无需密码直接删除
                         deleteAlbum(album.id);
                     } else {
-                        // 普通用户需要密码
                         showPasswordModal('delete', album.id);
                     }
                 });
@@ -2081,331 +2227,22 @@
             lightboxImg.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
         }
 
-        // 图片点击计数器（三击翻转）
-        lightboxImg.addEventListener('click', function(e) {
-            clickCount++;
-            
-            if (clickCount === 1) {
-                clickTimer = setTimeout(() => {
-                    clickCount = 0;
-                    // 单击逻辑（如果有）
-                }, 300);
-            } else if (clickCount === 2) {
-                clearTimeout(clickTimer);
-                clickTimer = setTimeout(() => {
-                    clickCount = 0;
-                    // 双击放大/缩小
-                    if (scale === 1) {
-                        scale = 2;
-                    } else {
-                        scale = 1;
-                        translateX = 0;
-                        translateY = 0;
-                    }
-                    updateImageTransform();
-                }, 300);
-            } else if (clickCount === 3) {
-                clearTimeout(clickTimer);
-                clickCount = 0;
-                // 三击翻转图片
-                imageCard.classList.toggle('flipped');
-            }
-        });
-
-        // 鼠标滚轮缩放
-        lightboxImg.addEventListener('wheel', function(e) {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? 0.9 : 1.1;
-            const rect = lightboxImg.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            // 计算缩放中心点
-            const centerX = (x - rect.width / 2) / scale;
-            const centerY = (y - rect.height / 2) / scale;
-            
-            // 缩放
-            scale *= delta;
-            scale = Math.max(0.1, Math.min(scale, 10)); // 限制缩放范围
-            
-            // 调整位置以保持缩放中心点不变
-            translateX = centerX * (1 - scale) + (translateX * scale);
-            translateY = centerY * (1 - scale) + (translateY * scale);
-            
-            updateImageTransform();
-        });
-
-        // 鼠标拖拽移动
-        lightboxImg.addEventListener('mousedown', function(e) {
-            if (scale > 1) {
-                isDragging = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                startTranslateX = translateX;
-                startTranslateY = translateY;
-                lightboxImg.style.cursor = 'grabbing';
-                e.preventDefault();
-            }
-        });
-
-        document.addEventListener('mousemove', function(e) {
-            if (isDragging) {
-                const deltaX = e.clientX - startX;
-                const deltaY = e.clientY - startY;
-                translateX = startTranslateX + deltaX / scale;
-                translateY = startTranslateY + deltaY / scale;
-                updateImageTransform();
-            }
-        });
-
-        document.addEventListener('mouseup', function() {
-            if (isDragging) {
-                isDragging = false;
-                lightboxImg.style.cursor = 'grab';
-            }
-        });
-
-        // 触摸事件支持（手机端滑动切换图片）
-        lightboxImg.addEventListener('touchstart', function(e) {
-            if (scale === 1) {
-                // 只有在未缩放状态下才允许滑动切换
-                isSwiping = true;
-                startXSwipe = e.touches[0].clientX;
-                e.preventDefault();
-            } else if (scale > 1) {
-                // 缩放状态下允许拖拽移动
-                isDragging = true;
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-                startTranslateX = translateX;
-                startTranslateY = translateY;
-                e.preventDefault();
-            }
-        });
-
-        document.addEventListener('touchmove', function(e) {
-            if (isSwiping && e.touches.length === 1) {
-                // 滑动切换图片
-                e.preventDefault();
-            } else if (isDragging && e.touches.length === 1) {
-                // 拖拽移动图片
-                const deltaX = e.touches[0].clientX - startX;
-                const deltaY = e.touches[0].clientY - startY;
-                translateX = startTranslateX + deltaX / scale;
-                translateY = startTranslateY + deltaY / scale;
-                updateImageTransform();
-                e.preventDefault();
-            }
-        });
-
-        document.addEventListener('touchend', function(e) {
-            if (isSwiping) {
-                if (e.changedTouches.length > 0) {
-                    const endX = e.changedTouches[0].clientX;
-                    const diffX = startXSwipe - endX;
-                    
-                    // 判断滑动方向和距离
-                    if (Math.abs(diffX) > 50) { // 最小滑动距离
-                        if (diffX > 0) {
-                            // 向左滑动，显示下一张
-                            nextImage();
-                        } else {
-                            // 向右滑动，显示上一张
-                            prevImage();
-                        }
-                    }
-                }
-                isSwiping = false;
-            }
-            
-            if (isDragging) {
-                isDragging = false;
-            }
-        });
-
-        // 上一张图片
-        function prevImage() {
-            if (currentIndex > 0) {
-                currentIndex--;
-                const album = albums[currentIndex];
-                updateLightboxContent(album);
-            }
+        // 关闭灯箱
+        function closeLightboxFunc() {
+            lightbox.classList.remove('active');
+            document.body.style.overflow = 'auto';
         }
 
-        // 下一张图片
-        function nextImage() {
-            if (currentIndex < albums.length - 1) {
-                currentIndex++;
-                const album = albums[currentIndex];
-                updateLightboxContent(album);
-            }
-        }
-
-        // 更新灯箱内容
-        function updateLightboxContent(album) {
-            currentAlbumId = album.id;
-            lightboxImg.src = album.img;
-            
-            // 重置缩放和位置
-            scale = 1;
-            translateX = 0;
-            translateY = 0;
-            updateImageTransform();
-            
-            // 重置图片卡片状态
-            imageCard.classList.remove('flipped');
-            
-            // 设置图片故事内容
-            if (album.desc && album.desc.trim() !== "") {
-                imageStory.innerHTML = album.desc;
-                imageStory.classList.remove('empty-story');
-            } else {
-                imageStory.innerHTML = "秀斌也有自己的小秘密~";
-                imageStory.classList.add('empty-story');
-            }
-            
-            // 更新点赞信息
-            updateLikeInfo(album);
-        }
-
-        // 更新点赞信息
-        function updateLikeInfo(album) {
-            likeCount.textContent = album.likes || 0;
-            if (album.liked) {
-                likeBtn.classList.add('liked');
-            } else {
-                likeBtn.classList.remove('liked');
-            }
-        }
-
-        // 点赞功能
-        likeBtn.addEventListener('click', async function() {
-            if (!currentAlbumId) return;
-            
-            const album = albums.find(a => a.id === currentAlbumId);
-            if (album) {
-                const newLiked = !album.liked;
-                const newLikes = newLiked ? (album.likes || 0) + 1 : Math.max(0, (album.likes || 0) - 1);
-                
-                try {
-                    const response = await fetch('/api/like', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            albumId: currentAlbumId,
-                            liked: newLiked,
-                            likes: newLikes
-                        })
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        album.likes = newLikes;
-                        album.liked = newLiked;
-                        updateLikeInfo(album);
-                        
-                        // 同时更新网格中的显示
-                        const albumItem = document.querySelector(`.album-item .album-img[data-id="${currentAlbumId}"]`);
-                        if (albumItem) {
-                            const likeSpan = albumItem.nextElementSibling.querySelector('.album-meta span:first-child');
-                            if (likeSpan) {
-                                likeSpan.innerHTML = `<i class="fas fa-heart"></i> ${newLikes}`;
-                            }
-                        }
-                    } else {
-                        alert('点赞失败：' + result.error);
-                    }
-                } catch (error) {
-                    console.error('点赞失败:', error);
-                    alert('点赞失败：' + error.message);
-                }
-            }
-        });
-
-        // 发送弹幕
-        async function sendDanmu() {
-            const text = danmuInput.value.trim();
-            if (text && currentAlbumId) {
-                try {
-                    const response = await fetch('/api/comment', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            albumId: currentAlbumId,
-                            comment: {
-                                author: '匿名用户',
-                                text: text,
-                                time: new Date().toLocaleString('zh-CN')
-                            }
-                        })
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        // 创建弹幕元素
-                        const danmuItem = document.createElement('div');
-                        danmuItem.className = 'danmu-item';
-                        danmuItem.textContent = text;
-                        
-                        // 随机颜色和位置
-                        const randomColor = danmuColors[Math.floor(Math.random() * danmuColors.length)];
-                        danmuItem.style.color = randomColor;
-                        danmuItem.style.top = Math.random() * 60 + 10 + '%'; // 在10%-70%之间
-                        
-                        // 随机透明度
-                        danmuItem.style.opacity = (Math.random() * 0.5 + 0.3).toString();
-                        
-                        // 随机动画时长（5-10秒）
-                        const duration = Math.random() * 5 + 5;
-                        danmuItem.style.animationDuration = duration + 's';
-                        
-                        // 添加到容器
-                        danmuContainer.appendChild(danmuItem);
-                        
-                        // 清空输入框
-                        danmuInput.value = '';
-                        
-                        // 3秒后淡出并移除
-                        setTimeout(() => {
-                            danmuItem.style.transition = 'opacity 1s';
-                            danmuItem.style.opacity = '0';
-                            setTimeout(() => {
-                                if (danmuItem.parentNode) {
-                                    danmuItem.parentNode.removeChild(danmuItem);
-                                }
-                            }, 1000);
-                        }, duration * 1000 - 1000);
-                    } else {
-                        alert('发送评论失败：' + result.error);
-                    }
-                } catch (error) {
-                    console.error('发送评论失败:', error);
-                    alert('发送评论失败：' + error.message);
-                }
-            }
-        }
-
-        // 弹幕输入事件
-        danmuSubmit.addEventListener('click', sendDanmu);
-        danmuInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendDanmu();
-            }
-        });
-
-        // 隐藏/显示弹幕
-        toggleDanmuBtn.addEventListener('click', function() {
+        // 切换弹幕显示/隐藏
+        function toggleDanmu() {
             danmuVisible = !danmuVisible;
-            danmuContainer.style.display = danmuVisible ? 'block' : 'none';
             updateToggleDanmuButton();
-        });
+            document.querySelectorAll('.danmu-item').forEach(danmu => {
+                danmu.style.display = danmuVisible ? 'block' : 'none';
+            });
+        }
 
+        // 更新弹幕开关按钮
         function updateToggleDanmuButton() {
             const icon = toggleDanmuBtn.querySelector('i');
             if (danmuVisible) {
@@ -2417,240 +2254,139 @@
             }
         }
 
-        // 图片导航按钮事件
-        prevBtn.addEventListener('click', prevImage);
-        nextBtn.addEventListener('click', nextImage);
-
-        // 键盘左右箭头切换图片
-        document.addEventListener('keydown', function(e) {
-            if (lightbox.classList.contains('active')) {
-                if (e.key === 'ArrowLeft') {
-                    prevImage();
-                } else if (e.key === 'ArrowRight') {
-                    nextImage();
-                }
+        // 发送弹幕
+        function sendDanmu() {
+            const text = danmuInput.value.trim();
+            if (!text) return;
+            
+            const danmuItem = document.createElement('div');
+            danmuItem.className = 'danmu-item';
+            danmuItem.textContent = text;
+            danmuItem.style.color = danmuColors[Math.floor(Math.random() * danmuColors.length)];
+            danmuItem.style.top = `${Math.random() * 70 + 10}%`;
+            danmuItem.style.fontSize = `${Math.random() * 0.5 + 1}rem`;
+            danmuItem.style.animationDuration = `${Math.random() * 5 + 10}s`;
+            
+            if (!danmuVisible) {
+                danmuItem.style.display = 'none';
             }
-        });
+            
+            danmuContainer.appendChild(danmuItem);
+            
+            // 清空输入框
+            danmuInput.value = '';
+        }
 
-        // 删除相册项
-        async function deleteAlbum(id) {
-            try {
-                const response = await fetch('/api/delete', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ id: id })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    albums = albums.filter(album => album.id !== id);
-                    renderAlbums();
-                } else {
-                    alert('删除失败：' + result.error);
-                }
-            } catch (error) {
-                console.error('删除失败:', error);
-                alert('删除失败：' + error.message);
+        // 更新点赞信息
+        function updateLikeInfo(album) {
+            likeCount.textContent = album.likes || 0;
+            likeBtn.classList.toggle('liked', album.liked);
+        }
+
+        // 点赞功能
+        function likeAlbum() {
+            const album = albums.find(a => a.id === currentAlbumId);
+            if (!album) return;
+            
+            const wasLiked = album.liked;
+            album.liked = !wasLiked;
+            album.likes = wasLiked ? Math.max(0, (album.likes || 0) - 1) : (album.likes || 0) + 1;
+            
+            // 更新UI
+            updateLikeInfo(album);
+            
+            // 发送请求到后端
+            fetch('/api/like', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    albumId: currentAlbumId,
+                    liked: album.liked,
+                    likes: album.likes
+                })
+            }).catch(error => {
+                console.error('点赞请求失败:', error);
+                // 如果失败，回滚状态
+                album.liked = wasLiked;
+                album.likes = wasLiked ? (album.likes || 0) + 1 : Math.max(0, (album.likes || 0) - 1);
+                updateLikeInfo(album);
+            });
+        }
+
+        // 切换到上一张图片
+        function showPrevImage() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                openLightbox(albums[currentIndex]);
             }
         }
 
-        // 应用筛选
-        function applyFilters() {
-            const category = categoryFilter.value;
-            const year = yearFilter.value;
-            const month = monthFilter.value;
-            
-            let filteredAlbums = [...albums];
-            
-            // 类型筛选
-            if (category !== 'all') {
-                filteredAlbums = filteredAlbums.filter(album => album.category === category);
+        // 切换到下一张图片
+        function showNextImage() {
+            if (currentIndex < albums.length - 1) {
+                currentIndex++;
+                openLightbox(albums[currentIndex]);
             }
-            
-            // 年份筛选
-            if (year !== 'all') {
-                filteredAlbums = filteredAlbums.filter(album => {
-                    const albumYear = new Date(album.date).getFullYear().toString();
-                    return albumYear === year;
-                });
-            }
-            
-            // 月份筛选
-            if (month !== 'all') {
-                filteredAlbums = filteredAlbums.filter(album => {
-                    const albumMonth = String(new Date(album.date).getMonth() + 1).padStart(2, '0');
-                    return albumMonth === month;
-                });
-            }
-            
-            renderAlbums(filteredAlbums);
         }
 
-        // 重置筛选
-        function resetFilters() {
-            categoryFilter.value = 'all';
-            yearFilter.value = 'all';
-            monthFilter.value = 'all';
-            renderAlbums();
-        }
-
-        // 上传区域点击事件
-        uploadArea.addEventListener('click', (e) => {
-            // 只有点击区域本身时才触发文件选择
-            if (e.target === uploadArea || e.target.tagName === 'I' || e.target.tagName === 'P') {
-                fileInput.click();
-            }
-        });
-
-        // 拖拽上传功能
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.style.background = 'rgba(255, 215, 0, 0.3)';
-        });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.style.background = 'rgba(255, 255, 255, 0.7)';
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.style.background = 'rgba(255, 255, 255, 0.7)';
-            if (e.dataTransfer.files.length) {
-                handleFiles(e.dataTransfer.files);
-            }
-        });
-
-        // 文件输入变化事件
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length) {
-                handleFiles(e.target.files);
-            }
-        });
-
-        // 上传按钮点击事件
-        uploadBtn.addEventListener('click', () => {
-            if (fileInput.files.length) {
-                handleFiles(fileInput.files);
-            } else {
-                alert('请先选择要上传的图片');
-            }
-        });
-
-        // 筛选按钮事件
-        applyFilterBtn.addEventListener('click', applyFilters);
-        resetFilterBtn.addEventListener('click', resetFilters);
-
-        // 处理文件上传
-        function handleFiles(files) {
-            if (files.length === 0) return;
-            
-            const file = files[0];
-            
-            if (!file.type.match('image.*')) {
-                alert('请只上传图片文件');
+        // 文件选择处理
+        function handleFileSelect(file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                alert('请上传 JPG, PNG, GIF 或 WebP 格式的图片！');
                 return;
             }
             
-            // 保存文件数据
+            if (file.size > 10 * 1024 * 1024) {
+                alert('图片大小不能超过 10MB！');
+                return;
+            }
+            
             tempUploadFile = {
+                file: file,
                 name: file.name,
-                file: file
+                size: file.size,
+                type: file.type
             };
             
-            // 管理员无需密码直接上传
-            if (isAdmin) {
-                showEditModal(tempUploadFile);
-            } else {
-                // 普通用户需要密码
-                showPasswordModal('upload', tempUploadFile);
-            }
-        }
-
-        // 检查图片名称是否已存在
-        function isTitleExists(title) {
-            return albums.some(album => album.title === title);
-        }
-
-        // 显示编辑弹窗
-        function showEditModal(fileData) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 previewImage.src = e.target.result;
-                editTitle.value = fileData.name.replace(/\.[^/.]+$/, ""); // 移除文件扩展名
-                editDesc.value = "";
-                editCategory.value = "candid"; // 默认分类为生活照
-                
-                // 设置默认年月为当前年月
-                const now = new Date();
-                editYear.value = now.getFullYear();
-                editMonth.value = String(now.getMonth() + 1).padStart(2, '0');
-                
-                progressBar.style.width = "0%";
-                
-                // 隐藏错误提示
-                titleError.style.display = 'none';
-                
-                tempUploadFile = fileData;
-                
-                editModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-                
-                // 添加装饰元素
-                createDecorations();
+                previewImage.style.display = 'block';
+                editTitle.value = file.name.split('.')[0];
+                editDesc.value = '';
+                openEditModal();
             };
-            reader.readAsDataURL(fileData.file);
+            reader.readAsDataURL(file);
         }
 
-        // 创建装饰元素（爱心和星星）
-        function createDecorations() {
-            // 清除之前的装饰
-            document.querySelectorAll('.heart, .star').forEach(el => el.remove());
-            
-            // 创建爱心
-            for (let i = 0; i < 6; i++) {
-                const heart = document.createElement('div');
-                heart.className = 'heart';
-                heart.innerHTML = '<i class="fas fa-heart"></i>';
-                heart.style.left = Math.random() * 100 + '%';
-                heart.style.top = Math.random() * 100 + '%';
-                heart.style.animationDelay = Math.random() * 3 + 's';
-                heart.style.fontSize = (15 + Math.random() * 10) + 'px';
-                editModal.appendChild(heart);
-            }
-            
-            // 创建星星
-            for (let i = 0; i < 8; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                star.innerHTML = '<i class="fas fa-star"></i>';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                star.style.animationDelay = Math.random() * 2 + 's';
-                star.style.fontSize = (10 + Math.random() * 8) + 'px';
-                editModal.appendChild(star);
-            }
+        function openEditModal() {
+            editModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            titleError.style.display = 'none';
+            uploadError.style.display = 'none';
+            progressBar.style.width = '0%';
         }
 
-        // 关闭编辑弹窗
         function closeEditModal() {
             editModal.classList.remove('active');
             document.body.style.overflow = 'auto';
             tempUploadFile = null;
-            
-            // 移除装饰元素
-            setTimeout(() => {
-                document.querySelectorAll('.heart, .star').forEach(el => el.remove());
-            }, 500);
+            previewImage.style.display = 'none';
+            editForm.reset();
+            titleError.style.display = 'none';
+            uploadError.style.display = 'none';
+            progressBar.style.width = '0%';
         }
 
-        // 取消按钮事件
-        editCancel.addEventListener('click', closeEditModal);
+        function isTitleExists(title) {
+            return albums.some(album => album.title === title);
+        }
 
-        // 表单提交事件
-        editForm.addEventListener('submit', async function(e) {
+        // 修复后的上传表单提交函数
+        async function handleUploadSubmit(e) {
             e.preventDefault();
             
             if (!tempUploadFile) return;
@@ -2665,12 +2401,12 @@
             
             // 隐藏错误提示
             titleError.style.display = 'none';
+            uploadError.style.display = 'none';
             
             // 获取年月
             const year = editYear.value;
             const month = editMonth.value;
-            const day = new Date().getDate().toString().padStart(2, '0');
-            const dateStr = `${year}-${month}-${day}`;
+            const dateString = new Date().toISOString().split('T')[0]; // 使用当前日期
             
             // 准备上传数据
             const formData = new FormData();
@@ -2679,27 +2415,52 @@
                 title: title || "未命名图片",
                 desc: editDesc.value || "用户上传的照片",
                 category: editCategory.value,
-                date: dateStr
+                date: dateString
             }));
             
             try {
                 // 显示上传进度
                 progressBar.style.width = "30%";
                 
+                console.log('Starting upload...');
                 const response = await fetch('/api/upload', {
                     method: 'POST',
                     body: formData
                 });
                 
+                console.log('Upload response status:', response.status);
                 progressBar.style.width = "70%";
                 
-                const result = await response.json();
+                // 关键修改：先检查响应状态和内容类型
+                const contentType = response.headers.get('content-type');
+                console.log('Response content-type:', contentType);
+                
+                // 获取响应文本
+                const responseText = await response.text();
+                console.log('Raw response text:', responseText);
+                
+                // 检查是否为空响应
+                if (!responseText || responseText.trim() === '') {
+                    throw new Error(`服务器返回空响应 (状态码: ${response.status})`);
+                }
+                
+                // 检查是否为JSON格式
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('Failed to parse JSON response:', parseError);
+                    console.error('Full response text:', responseText);
+                    throw new Error(`服务器返回了无效的响应格式: ${responseText.substring(0, 200)}`);
+                }
                 
                 if (result.success) {
                     progressBar.style.width = "100%";
                     
                     // 添加到相册数组开头
-                    albums.unshift(result.data);
+                    if (result.data) {
+                        albums.unshift(result.data);
+                    }
                     
                     // 关闭弹窗并刷新相册
                     closeEditModal();
@@ -2713,75 +2474,74 @@
                     throw new Error(result.error || '上传失败');
                 }
             } catch (error) {
-                console.error('上传失败:', error);
-                alert('图片上传失败：' + error.message);
+                console.error('Upload failed:', error);
+                uploadError.textContent = '上传失败：' + error.message;
+                uploadError.style.display = 'block';
                 progressBar.style.width = "0%";
             }
-        });
+        }
 
-        // 公告功能
-        document.getElementById('edit-announcement-btn').addEventListener('click', function(e) {
-            e.stopPropagation();
-            showPasswordModal('announcement', null);
-        });
+        // 筛选功能
+        function applyFilters() {
+            const category = categoryFilter.value;
+            const year = yearFilter.value;
+            const month = monthFilter.value;
+            
+            let filtered = albums.filter(album => {
+                const albumDate = new Date(album.date);
+                const albumYear = albumDate.getFullYear().toString();
+                const albumMonth = (albumDate.getMonth() + 1).toString().padStart(2, '0');
+                
+                return (category === 'all' || album.category === category) &&
+                       (year === 'all' || albumYear === year) &&
+                       (month === 'all' || albumMonth === month);
+            });
+            
+            renderAlbums(filtered);
+        }
 
-        document.getElementById('close-announcement-btn').addEventListener('click', function(e) {
-            e.stopPropagation();
-            document.getElementById('announcement-float').style.display = 'none';
-        });
+        function resetFilters() {
+            categoryFilter.value = 'all';
+            yearFilter.value = 'all';
+            monthFilter.value = 'all';
+            renderAlbums();
+        }
 
-        function showAnnouncementModal() {
+        // 公告相关函数
+        function showEditAnnouncementModal() {
             document.getElementById('announcement-textarea').value = announcementContent;
             document.getElementById('announcement-modal').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
 
-        function hideAnnouncementModal() {
+        function hideEditAnnouncementModal() {
             document.getElementById('announcement-modal').classList.remove('active');
             document.body.style.overflow = 'auto';
         }
 
-        document.getElementById('announcement-save').addEventListener('click', async function() {
-            try {
-                const content = document.getElementById('announcement-textarea').value.trim() || 
-                               "欢迎来到郑秀彬专属相册集！这里珍藏着秀彬的每一个精彩瞬间。请尽情欣赏并留下您的宝贵评论。";
-                
-                const response = await fetch('/api/announcement', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ content: content })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    announcementContent = content;
-                    document.getElementById('announcement-content').innerHTML = announcementContent;
-                    if (announcementContent === "欢迎来到郑秀彬专属相册集！这里珍藏着秀彬的每一个精彩瞬间。请尽情欣赏并留下您的宝贵评论。") {
-                        document.getElementById('announcement-content').classList.add('empty');
-                    } else {
-                        document.getElementById('announcement-content').classList.remove('empty');
-                    }
-                    hideAnnouncementModal();
-                } else {
-                    alert('保存公告失败：' + result.error);
-                }
-            } catch (error) {
+        function saveAnnouncement() {
+            const newContent = document.getElementById('announcement-textarea').value;
+            announcementContent = newContent;
+            document.getElementById('announcement-content').innerHTML = newContent;
+            
+            // 保存到后端
+            fetch('/api/announcement', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: newContent })
+            }).catch(error => {
                 console.error('保存公告失败:', error);
-                alert('保存公告失败：' + error.message);
-            }
-        });
+            });
+            
+            hideEditAnnouncementModal();
+        }
 
-        document.getElementById('announcement-cancel').addEventListener('click', hideAnnouncementModal);
-
-        // 显示密码弹窗
-        function showPasswordModal(action, data) {
-            pendingAction = {action: action, data: data};
-            if (action === 'upload') {
-                passwordAction.textContent = '请输入密码以上传图片';
-            } else if (action === 'delete') {
+        // 密码验证相关函数
+        function showPasswordModal(action, albumId = null) {
+            pendingAction = action;
+            if (action === 'delete') {
                 passwordAction.textContent = '请输入密码以删除图片';
             } else if (action === 'announcement') {
                 passwordAction.textContent = '请输入密码以编辑公告';
@@ -2789,150 +2549,52 @@
             passwordInput.value = '';
             passwordModal.classList.add('active');
             document.body.style.overflow = 'hidden';
+            currentAlbumId = albumId;
         }
 
-        // 隐藏密码弹窗
         function hidePasswordModal() {
             passwordModal.classList.remove('active');
             document.body.style.overflow = 'auto';
+            pendingAction = null;
+            currentAlbumId = null;
         }
 
-        // 验证密码
         function verifyPassword() {
-            const enteredPassword = passwordInput.value.trim();
-            let isValid = false;
+            const password = passwordInput.value.trim();
             
-            if (pendingAction.action === 'announcement') {
-                isValid = enteredPassword === ANNOUNCEMENT_PASSWORD;
+            if (pendingAction === 'delete' && password === PASSWORD) {
+                deleteAlbum(currentAlbumId);
+                hidePasswordModal();
+            } else if (pendingAction === 'announcement' && password === ANNOUNCEMENT_PASSWORD) {
+                hidePasswordModal();
+                showEditAnnouncementModal();
             } else {
-                isValid = enteredPassword === PASSWORD;
-            }
-            
-            if (isValid) {
-                passwordModal.classList.remove('active');
-                document.body.style.overflow = 'auto';
-                
-                if (pendingAction) {
-                    if (pendingAction.action === 'upload') {
-                        // 执行上传操作
-                        if (tempUploadFile) {
-                            showEditModal(tempUploadFile);
-                        }
-                    } else if (pendingAction.action === 'delete') {
-                        // 执行删除操作
-                        deleteAlbum(pendingAction.data);
-                    } else if (pendingAction.action === 'announcement') {
-                        // 执行编辑公告操作
-                        showAnnouncementModal();
-                    }
-                }
-                
-                // 清空pendingAction
-                pendingAction = null;
-            } else {
-                alert('密码错误，请重新输入！');
+                alert('密码错误！');
                 passwordInput.value = '';
                 passwordInput.focus();
             }
         }
 
-        // 密码弹窗事件
-        passwordConfirm.addEventListener('click', verifyPassword);
-        passwordCancel.addEventListener('click', hidePasswordModal);
-        passwordInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                verifyPassword();
-            }
-        });
+        function deleteAlbum(id) {
+            albums = albums.filter(album => album.id !== id);
+            renderAlbums();
+            
+            // 发送删除请求到后端
+            fetch('/api/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: id })
+            }).catch(error => {
+                console.error('删除请求失败:', error);
+            });
+        }
 
-        // 登录弹窗事件
-        loginConfirm.addEventListener('click', login);
-        loginCancel.addEventListener('click', hideLoginModal);
-        loginPassword.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                login();
-            }
-        });
-
-        // 点击关闭灯箱
-        closeLightbox.addEventListener('click', function() {
-            lightbox.classList.remove('active');
-            document.body.style.overflow = 'auto';
-            currentAlbumId = null;
-            isZoomed = false;
-            scale = 1;
-            translateX = 0;
-            translateY = 0;
-            updateImageTransform();
-            imageCard.classList.remove('flipped');
-        });
-        
-        lightbox.addEventListener('click', (e) => {
-            if (e.target === lightbox) {
-                lightbox.classList.remove('active');
-                document.body.style.overflow = 'auto';
-                currentAlbumId = null;
-                isZoomed = false;
-                scale = 1;
-                translateX = 0;
-                translateY = 0;
-                updateImageTransform();
-                imageCard.classList.remove('flipped');
-            }
-        });
-
-        // ESC键关闭弹窗
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (lightbox.classList.contains('active')) {
-                    lightbox.classList.remove('active');
-                    document.body.style.overflow = 'auto';
-                    currentAlbumId = null;
-                    isZoomed = false;
-                    scale = 1;
-                    translateX = 0;
-                    translateY = 0;
-                    updateImageTransform();
-                    imageCard.classList.remove('flipped');
-                } else if (editModal.classList.contains('active')) {
-                    closeEditModal();
-                } else if (passwordModal.classList.contains('active')) {
-                    hidePasswordModal();
-                } else if (document.getElementById('announcement-modal').classList.contains('active')) {
-                    hideAnnouncementModal();
-                } else if (loginModal.classList.contains('active')) {
-                    hideLoginModal();
-                }
-            }
-        });
-
-        // 点击弹窗外部关闭编辑弹窗
-        editModal.addEventListener('click', (e) => {
-            if (e.target === editModal) {
-                closeEditModal();
-            }
-        });
-
-        // 点击弹窗外部关闭密码弹窗
-        passwordModal.addEventListener('click', (e) => {
-            if (e.target === passwordModal) {
-                hidePasswordModal();
-            }
-        });
-
-        // 点击弹窗外部关闭公告弹窗
-        document.getElementById('announcement-modal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('announcement-modal')) {
-                hideAnnouncementModal();
-            }
-        });
-
-        // 点击弹窗外部关闭登录弹窗
-        loginModal.addEventListener('click', (e) => {
-            if (e.target === loginModal) {
-                hideLoginModal();
-            }
-        });
+        // 图片操作相关函数
+        function flipImageCard() {
+            imageCard.classList.toggle('flipped');
+        }
     </script>
 </body>
 </html>
