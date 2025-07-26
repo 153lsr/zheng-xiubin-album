@@ -3,7 +3,7 @@ main = "src/worker.js"
 compatibility_date = "2023-12-01"
 
 [[kv_namespaces]]
-binding = "ALBUM_KV"
+binding = "ALBUM_KV2"
 id = "1618ca02ae3643beb9027c622c4537f1"
 
 [[r2_buckets]]
