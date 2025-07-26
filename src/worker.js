@@ -1949,7 +1949,7 @@ function getStaticHTML() {
 '                this.style.background = \'rgba(255, 255, 255, 0.7)\';\n' +
 '                const files = e.dataTransfer.files;\n' +
 '                if (files.length > 0) {\n' +
-'                    handleFileSelect(files);\n' +
+'                    handleFileSelect(files[0]);\n' +
 '                }\n' +
 '            });\n' +
 '\n' +
@@ -1959,7 +1959,7 @@ function getStaticHTML() {
 '\n' +
 '            fileInput.addEventListener(\'change\', function() {\n' +
 '                if (this.files.length > 0) {\n' +
-'                    handleFileSelect(this.files);\n' +
+'                    handleFileSelect(this.files[0]);\n' +
 '                }\n' +
 '            });\n' +
 '\n' +
@@ -2122,8 +2122,8 @@ function getStaticHTML() {
 '            if (password === ADMIN_PASSWORD) {\n' +
 '                isAdmin = true;\n' +
 '                hideLoginModal();\n' +
-'                updateLoginDisplay();\n' +
 '                alert(\'管理员登录成功！\');\n' +
+'                updateLoginDisplay(); // 确保登录后更新显示\n' +
 '            } else {\n' +
 '                alert(\'密码错误！\');\n' +
 '                loginPassword.value = \'\';\n' +
@@ -2375,7 +2375,7 @@ function getStaticHTML() {
 '            reader.onload = function(e) {\n' +
 '                previewImage.src = e.target.result;\n' +
 '                previewImage.style.display = \'block\';\n' +
-'                editTitle.value = file.name.split(\'.\');\n' +
+'                editTitle.value = file.name.split(\'.\')[0]; // 修正：获取文件名，不包含扩展名\n' +
 '                editDesc.value = \'\';\n' +
 '                openEditModal();\n' +
 '            };\n' +
@@ -2426,7 +2426,7 @@ function getStaticHTML() {
 '            // 获取年月\n' +
 '            const year = editYear.value;\n' +
 '            const month = editMonth.value;\n' +
-'            const dateString = new Date().toISOString().split(\'T\'); // 使用当前日期\n' +
+'            const dateString = new Date().toISOString().split(\'T\')[0]; // 修正：获取日期字符串，不包含时间部分\n' +
 '            \n' +
 '            // 准备上传数据\n' +
 '            const formData = new FormData();\n' +
@@ -2837,7 +2837,7 @@ async function handleUpload(request, env) {
             title: metadata.title || '未命名',
             desc: metadata.desc || '',
             category: metadata.category || 'candid',
-            date: metadata.date || new Date().toISOString().split('T'),
+            date: metadata.date || new Date().toISOString().split('T')[0], // 修正：确保日期是字符串
             img: imageUrl,
             likes: 0,
             liked: false,
@@ -3033,4 +3033,22 @@ async function handleAnnouncement(request, env) {
         if (request.method === 'GET') {
             const content = await env.ALBUM_KV2.get('announcement') || '欢迎来到郑秀彬专属相册集！这里珍藏着秀彬的每一个精彩瞬间。请尽情欣赏并留下您的宝贵评论。';
             return new Response(JSON.stringify({ content }), {
-                headers: C
+                headers: CORS_HEADERS
+            });
+        } else {
+            const data = await request.json();
+            await env.ALBUM_KV2.put('announcement', data.content);
+            return new Response(JSON.stringify({ success: true }), {
+                headers: CORS_HEADERS
+            });
+        }
+    } catch (error) {
+        return new Response(JSON.stringify({ 
+            success: false, 
+            error: '公告操作失败: ' + error.message 
+        }), {
+            status: 500,
+            headers: CORS_HEADERS
+        });
+    }
+}
