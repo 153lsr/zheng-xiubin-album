@@ -1,31 +1,4 @@
-export default {
-    async fetch(request, env) {
-        const url = new URL(request.url);
-        const pathname = url.pathname;
-        
-        // API路由处理
-        if (pathname.startsWith('/api/')) {
-            return handleAPI(request, env, pathname);
-        }
-        
-        // 静态文件服务
-        if (pathname === '/' || pathname === '/index.html') {
-            return new Response(getStaticHTML(), {
-                headers: { 
-                    'Content-Type': 'text/html; charset=utf-8',
-                    'Cache-Control': 'public, max-age=3600'
-                }
-            });
-        }
-        
-        // 其他静态资源
-        return await handleStaticAssets(request, env);
-    }
-};
-
-// 获取HTML内容
-function getStaticHTML() {
-    return `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -1543,71 +1516,6 @@ function getStaticHTML() {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
-        /* 用户管理样式 */
-        .admin-panel {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 20px;
-            padding: 30px;
-            margin: 30px auto;
-            max-width: 800px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-            text-align: center;
-            backdrop-filter: blur(10px);
-            display: none;
-        }
-        
-        .admin-panel.active {
-            display: block;
-        }
-        
-        .admin-panel h2 {
-            color: #FF8C00;
-            margin-bottom: 20px;
-        }
-        
-        .users-list {
-            text-align: left;
-            margin: 20px 0;
-        }
-        
-        .user-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 10px;
-            margin: 10px 0;
-        }
-        
-        .user-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .make-admin-btn, .remove-admin-btn, .delete-user-btn {
-            padding: 5px 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-        
-        .make-admin-btn {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .remove-admin-btn {
-            background: #FF9800;
-            color: white;
-        }
-        
-        .delete-user-btn {
-            background: #f44336;
-            color: white;
-        }
     </style>
 </head>
 <body>
@@ -1619,14 +1527,6 @@ function getStaticHTML() {
             <h1><i class="fas fa-star"></i> 郑秀彬专属相册集</h1>
             <p>珍藏秀彬的每一个精彩瞬间</p>
         </header>
-        
-        <!-- 管理员面板 -->
-        <div class="admin-panel" id="admin-panel">
-            <h2><i class="fas fa-cog"></i> 用户管理面板</h2>
-            <div class="users-list" id="users-list">
-                <!-- 用户列表将在这里动态生成 -->
-            </div>
-        </div>
         
         <!-- 悬浮公告区域 -->
         <div class="announcement-float" id="announcement-float">
@@ -1861,33 +1761,12 @@ function getStaticHTML() {
         <!-- 登录弹窗 -->
         <div class="login-modal" id="login-modal">
             <div class="login-content">
-                <h3><i class="fas fa-user-lock"></i> 用户登录</h3>
-                <input type="text" class="login-input" id="login-username" placeholder="请输入用户名">
-                <input type="password" class="login-input" id="login-password" placeholder="请输入密码">
+                <h3><i class="fas fa-user-lock"></i> 管理员登录</h3>
+                <input type="password" class="login-input" id="login-password" placeholder="请输入管理员密码">
                 <div class="login-buttons">
                     <button class="login-btn-modal login-cancel" id="login-cancel">取消</button>
                     <button class="login-btn-modal login-confirm" id="login-confirm">登录</button>
                 </div>
-                <p style="margin-top: 15px; font-size: 0.9rem;">
-                    <a href="#" id="register-link" style="color: #FF8C00;">还没有账户？点击注册</a>
-                </p>
-            </div>
-        </div>
-        
-        <!-- 注册弹窗 -->
-        <div class="login-modal" id="register-modal">
-            <div class="login-content">
-                <h3><i class="fas fa-user-plus"></i> 用户注册</h3>
-                <input type="text" class="login-input" id="register-username" placeholder="请输入用户名">
-                <input type="password" class="login-input" id="register-password" placeholder="请输入密码">
-                <input type="password" class="login-input" id="register-confirm-password" placeholder="请确认密码">
-                <div class="login-buttons">
-                    <button class="login-btn-modal login-cancel" id="register-cancel">取消</button>
-                    <button class="login-btn-modal login-confirm" id="register-confirm">注册</button>
-                </div>
-                <p style="margin-top: 15px; font-size: 0.9rem;">
-                    <a href="#" id="back-to-login" style="color: #FF8C00;">已有账户？点击登录</a>
-                </p>
             </div>
         </div>
         
@@ -1900,8 +1779,6 @@ function getStaticHTML() {
         // 全局变量
         let albums = [];
         let announcementContent = "欢迎来到郑秀彬专属相册集！这里珍藏着秀彬的每一个精彩瞬间。请尽情欣赏并留下您的宝贵评论。";
-        let currentUser = null;
-        let users = [];
 
         // 获取DOM元素
         const gallery = document.getElementById('gallery');
@@ -1928,8 +1805,6 @@ function getStaticHTML() {
         const toggleDanmuBtn = document.getElementById('toggle-danmu-btn');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
-        const adminPanel = document.getElementById('admin-panel');
-        const usersList = document.getElementById('users-list');
         
         // 编辑弹窗元素
         const editModal = document.getElementById('edit-modal');
@@ -1953,20 +1828,9 @@ function getStaticHTML() {
 
         // 登录弹窗元素
         const loginModal = document.getElementById('login-modal');
-        const loginUsername = document.getElementById('login-username');
         const loginPassword = document.getElementById('login-password');
         const loginConfirm = document.getElementById('login-confirm');
         const loginCancel = document.getElementById('login-cancel');
-        const registerLink = document.getElementById('register-link');
-
-        // 注册弹窗元素
-        const registerModal = document.getElementById('register-modal');
-        const registerUsername = document.getElementById('register-username');
-        const registerPassword = document.getElementById('register-password');
-        const registerConfirmPassword = document.getElementById('register-confirm-password');
-        const registerConfirmBtn = document.getElementById('register-confirm');
-        const registerCancel = document.getElementById('register-cancel');
-        const backToLogin = document.getElementById('back-to-login');
 
         // 当前查看的相册ID和临时上传文件
         let currentAlbumId = null;
@@ -1986,6 +1850,8 @@ function getStaticHTML() {
         let isSwiping = false; // 是否正在滑动
 
         // 预设密码
+        const PASSWORD = "81798";
+        const ANNOUNCEMENT_PASSWORD = "72703";
         const ADMIN_PASSWORD = "admin123"; // 管理员密码
 
         // 随机颜色数组
@@ -2002,7 +1868,6 @@ function getStaticHTML() {
             // 加载相册和公告数据
             await loadAlbums();
             await loadAnnouncement();
-            await loadUsers();
             
             // 渲染相册
             renderAlbums();
@@ -2040,45 +1905,24 @@ function getStaticHTML() {
             }
         }
 
-        // 加载用户数据
-        async function loadUsers() {
-            try {
-                const response = await fetch('/api/users');
-                if (response.ok) {
-                    users = await response.json();
-                }
-            } catch (error) {
-                console.error('加载用户失败:', error);
-                users = [];
-            }
-        }
-
         // 更新登录显示
         function updateLoginDisplay() {
             loginSection.innerHTML = '';
             
-            if (currentUser) {
+            if (isAdmin) {
                 loginSection.innerHTML = `
-                    <div class="user-info" title="用户: ${currentUser.username}">
-                        <i class="fas fa-user"></i>
+                    <div class="user-info" title="管理员已登录">
+                        <i class="fas fa-user-shield"></i>
                     </div>
-                    <button class="logout-btn" id="logout-btn" title="退出登录">
+                    <button class="logout-btn" id="logout-btn" title="退出管理员">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 `;
                 document.getElementById('logout-btn').addEventListener('click', logout);
-                
-                // 如果是管理员，显示管理员面板
-                if (currentUser.isAdmin) {
-                    adminPanel.classList.add('active');
-                    renderUsersList();
-                } else {
-                    adminPanel.classList.remove('active');
-                }
             } else {
                 loginSection.innerHTML = `
-                    <button class="login-btn" id="login-btn" title="用户登录">
-                        <i class="fas fa-user"></i>
+                    <button class="login-btn" id="login-btn" title="管理员登录">
+                        <i class="fas fa-user-lock"></i>
                     </button>
                 `;
                 document.getElementById('login-btn').addEventListener('click', showLoginModal);
@@ -2087,7 +1931,6 @@ function getStaticHTML() {
 
         // 显示登录弹窗
         function showLoginModal() {
-            loginUsername.value = '';
             loginPassword.value = '';
             loginModal.classList.add('active');
             document.body.style.overflow = 'hidden';
@@ -2099,240 +1942,32 @@ function getStaticHTML() {
             document.body.style.overflow = 'auto';
         }
 
-        // 显示注册弹窗
-        function showRegisterModal() {
-            registerUsername.value = '';
-            registerPassword.value = '';
-            registerConfirmPassword.value = '';
-            registerModal.classList.add('active');
-            document.body.style.overflow = 'auto';
-        }
-
-        // 隐藏注册弹窗
-        function hideRegisterModal() {
-            registerModal.classList.remove('active');
-            document.body.style.overflow = 'auto';
-        }
-
         // 登录
-        async function login() {
-            const username = loginUsername.value.trim();
+        function login() {
             const password = loginPassword.value.trim();
-            
-            if (!username || !password) {
-                alert('请输入用户名和密码！');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username, password })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    currentUser = result.user;
-                    hideLoginModal();
-                    updateLoginDisplay();
-                    alert('登录成功！');
-                } else {
-                    alert('登录失败：' + result.error);
-                }
-            } catch (error) {
-                console.error('登录失败:', error);
-                alert('登录失败：' + error.message);
-            }
-        }
-
-        // 注册
-        async function register() {
-            const username = registerUsername.value.trim();
-            const password = registerPassword.value.trim();
-            const confirmPassword = registerConfirmPassword.value.trim();
-            
-            if (!username || !password) {
-                alert('请输入用户名和密码！');
-                return;
-            }
-            
-            if (password !== confirmPassword) {
-                alert('两次输入的密码不一致！');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username, password })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    currentUser = result.user;
-                    hideRegisterModal();
-                    updateLoginDisplay();
-                    alert('注册成功！');
-                } else {
-                    alert('注册失败：' + result.error);
-                }
-            } catch (error) {
-                console.error('注册失败:', error);
-                alert('注册失败：' + error.message);
+            if (password === ADMIN_PASSWORD) {
+                isAdmin = true;
+                hideLoginModal();
+                updateLoginDisplay();
+                alert('管理员登录成功！');
+            } else {
+                alert('密码错误！');
+                loginPassword.value = '';
+                loginPassword.focus();
             }
         }
 
         // 登出
         function logout() {
-            currentUser = null;
+            isAdmin = false;
             updateLoginDisplay();
-            alert('已退出登录');
+            alert('已退出管理员账户');
         }
 
         // 翻转头像卡片
         profileCard.addEventListener('click', function() {
             this.classList.toggle('flipped');
         });
-
-        // 渲染用户列表
-        function renderUsersList() {
-            if (!currentUser || !currentUser.isAdmin) return;
-            
-            let html = '';
-            users.forEach(user => {
-                html += `
-                    <div class="user-item">
-                        <div>
-                            <strong>${user.username}</strong>
-                            ${user.isAdmin ? '<span style="color: #FF8C00;">(管理员)</span>' : ''}
-                        </div>
-                        <div class="user-actions">
-                            ${!user.isAdmin ? 
-                                `<button class="make-admin-btn" data-username="${user.username}">设为管理员</button>` :
-                                `<button class="remove-admin-btn" data-username="${user.username}">取消管理员</button>`
-                            }
-                            <button class="delete-user-btn" data-username="${user.username}">删除用户</button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            usersList.innerHTML = html;
-            
-            // 绑定事件
-            document.querySelectorAll('.make-admin-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const username = this.getAttribute('data-username');
-                    makeAdmin(username);
-                });
-            });
-            
-            document.querySelectorAll('.remove-admin-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const username = this.getAttribute('data-username');
-                    removeAdmin(username);
-                });
-            });
-            
-            document.querySelectorAll('.delete-user-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const username = this.getAttribute('data-username');
-                    deleteUser(username);
-                });
-            });
-        }
-
-        // 设置管理员
-        async function makeAdmin(username) {
-            if (!confirm(`确定要将用户 "${username}" 设为管理员吗？`)) return;
-            
-            try {
-                const response = await fetch('/api/make-admin', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    await loadUsers();
-                    renderUsersList();
-                    alert('设置管理员成功！');
-                } else {
-                    alert('设置管理员失败：' + result.error);
-                }
-            } catch (error) {
-                console.error('设置管理员失败:', error);
-                alert('设置管理员失败：' + error.message);
-            }
-        }
-
-        // 取消管理员
-        async function removeAdmin(username) {
-            if (!confirm(`确定要取消用户 "${username}" 的管理员权限吗？`)) return;
-            
-            try {
-                const response = await fetch('/api/remove-admin', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    await loadUsers();
-                    renderUsersList();
-                    alert('取消管理员成功！');
-                } else {
-                    alert('取消管理员失败：' + result.error);
-                }
-            } catch (error) {
-                console.error('取消管理员失败:', error);
-                alert('取消管理员失败：' + error.message);
-            }
-        }
-
-        // 删除用户
-        async function deleteUser(username) {
-            if (!confirm(`确定要删除用户 "${username}" 吗？此操作不可恢复！`)) return;
-            
-            try {
-                const response = await fetch('/api/delete-user', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    await loadUsers();
-                    renderUsersList();
-                    alert('删除用户成功！');
-                } else {
-                    alert('删除用户失败：' + result.error);
-                }
-            } catch (error) {
-                console.error('删除用户失败:', error);
-                alert('删除用户失败：' + error.message);
-            }
-        }
 
         // 渲染相册
         function renderAlbums(filteredAlbums = albums) {
@@ -2363,7 +1998,7 @@ function getStaticHTML() {
                         </div>
                         <div class="album-date">${formattedDate}</div>
                     </div>
-                    ${(currentUser && currentUser.isAdmin) ? `<button class="delete-btn" data-id="${album.id}"><i class="fas fa-trash"></i></button>` : ''}
+                    <button class="delete-btn" data-id="${album.id}"><i class="fas fa-trash"></i></button>
                 `;
                 
                 // 图片点击事件处理
@@ -2379,14 +2014,18 @@ function getStaticHTML() {
                     openLightbox(album);
                 });
                 
-                // 删除按钮事件处理（仅管理员）
-                if (currentUser && currentUser.isAdmin) {
-                    const deleteBtn = albumItem.querySelector('.delete-btn');
-                    deleteBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
+                // 删除按钮事件处理
+                const deleteBtn = albumItem.querySelector('.delete-btn');
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (isAdmin) {
+                        // 管理员无需密码直接删除
                         deleteAlbum(album.id);
-                    });
-                }
+                    } else {
+                        // 普通用户需要密码
+                        showPasswordModal('delete', album.id);
+                    }
+                });
                 
                 gallery.appendChild(albumItem);
             });
@@ -2643,12 +2282,6 @@ function getStaticHTML() {
         likeBtn.addEventListener('click', async function() {
             if (!currentAlbumId) return;
             
-            if (!currentUser) {
-                alert('请先登录后再点赞！');
-                showLoginModal();
-                return;
-            }
-            
             const album = albums.find(a => a.id === currentAlbumId);
             if (album) {
                 const newLiked = !album.liked;
@@ -2696,12 +2329,6 @@ function getStaticHTML() {
         async function sendDanmu() {
             const text = danmuInput.value.trim();
             if (text && currentAlbumId) {
-                if (!currentUser) {
-                    alert('请先登录后再发送弹幕！');
-                    showLoginModal();
-                    return;
-                }
-                
                 try {
                     const response = await fetch('/api/comment', {
                         method: 'POST',
@@ -2711,7 +2338,7 @@ function getStaticHTML() {
                         body: JSON.stringify({
                             albumId: currentAlbumId,
                             comment: {
-                                author: currentUser.username,
+                                author: '匿名用户',
                                 text: text,
                                 time: new Date().toLocaleString('zh-CN')
                             }
@@ -2807,13 +2434,6 @@ function getStaticHTML() {
 
         // 删除相册项
         async function deleteAlbum(id) {
-            if (!currentUser || !currentUser.isAdmin) {
-                alert('您没有权限删除图片！');
-                return;
-            }
-            
-            if (!confirm('确定要删除这张图片吗？此操作不可恢复！')) return;
-            
             try {
                 const response = await fetch('/api/delete', {
                     method: 'POST',
@@ -2912,12 +2532,6 @@ function getStaticHTML() {
 
         // 上传按钮点击事件
         uploadBtn.addEventListener('click', () => {
-            if (!currentUser) {
-                alert('请先登录后再上传图片！');
-                showLoginModal();
-                return;
-            }
-            
             if (fileInput.files.length) {
                 handleFiles(fileInput.files);
             } else {
@@ -2946,7 +2560,13 @@ function getStaticHTML() {
                 file: file
             };
             
-            showEditModal(tempUploadFile);
+            // 管理员无需密码直接上传
+            if (isAdmin) {
+                showEditModal(tempUploadFile);
+            } else {
+                // 普通用户需要密码
+                showPasswordModal('upload', tempUploadFile);
+            }
         }
 
         // 检查图片名称是否已存在
@@ -3102,11 +2722,7 @@ function getStaticHTML() {
         // 公告功能
         document.getElementById('edit-announcement-btn').addEventListener('click', function(e) {
             e.stopPropagation();
-            if (!currentUser || !currentUser.isAdmin) {
-                alert('只有管理员才能编辑公告！');
-                return;
-            }
-            showAnnouncementModal();
+            showPasswordModal('announcement', null);
         });
 
         document.getElementById('close-announcement-btn').addEventListener('click', function(e) {
@@ -3126,11 +2742,6 @@ function getStaticHTML() {
         }
 
         document.getElementById('announcement-save').addEventListener('click', async function() {
-            if (!currentUser || !currentUser.isAdmin) {
-                alert('只有管理员才能编辑公告！');
-                return;
-            }
-            
             try {
                 const content = document.getElementById('announcement-textarea').value.trim() || 
                                "欢迎来到郑秀彬专属相册集！这里珍藏着秀彬的每一个精彩瞬间。请尽情欣赏并留下您的宝贵评论。";
@@ -3165,50 +2776,82 @@ function getStaticHTML() {
 
         document.getElementById('announcement-cancel').addEventListener('click', hideAnnouncementModal);
 
-        // 密码弹窗事件
-        passwordConfirm.addEventListener('click', function() {
-            // 简化处理，直接跳过密码验证
-            if (pendingAction) {
-                if (pendingAction.action === 'upload') {
-                    // 执行上传操作
-                    if (tempUploadFile) {
-                        showEditModal(tempUploadFile);
-                    }
-                } else if (pendingAction.action === 'delete') {
-                    // 执行删除操作
-                    deleteAlbum(pendingAction.data);
-                } else if (pendingAction.action === 'announcement') {
-                    // 执行编辑公告操作
-                    showAnnouncementModal();
-                }
+        // 显示密码弹窗
+        function showPasswordModal(action, data) {
+            pendingAction = {action: action, data: data};
+            if (action === 'upload') {
+                passwordAction.textContent = '请输入密码以上传图片';
+            } else if (action === 'delete') {
+                passwordAction.textContent = '请输入密码以删除图片';
+            } else if (action === 'announcement') {
+                passwordAction.textContent = '请输入密码以编辑公告';
+            }
+            passwordInput.value = '';
+            passwordModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 隐藏密码弹窗
+        function hidePasswordModal() {
+            passwordModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // 验证密码
+        function verifyPassword() {
+            const enteredPassword = passwordInput.value.trim();
+            let isValid = false;
+            
+            if (pendingAction.action === 'announcement') {
+                isValid = enteredPassword === ANNOUNCEMENT_PASSWORD;
+            } else {
+                isValid = enteredPassword === PASSWORD;
             }
             
-            // 清空pendingAction
-            pendingAction = null;
-            passwordModal.classList.remove('active');
-            document.body.style.overflow = 'auto';
-        });
-        passwordCancel.addEventListener('click', function() {
-            passwordModal.classList.remove('active');
-            document.body.style.overflow = 'auto';
+            if (isValid) {
+                passwordModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+                
+                if (pendingAction) {
+                    if (pendingAction.action === 'upload') {
+                        // 执行上传操作
+                        if (tempUploadFile) {
+                            showEditModal(tempUploadFile);
+                        }
+                    } else if (pendingAction.action === 'delete') {
+                        // 执行删除操作
+                        deleteAlbum(pendingAction.data);
+                    } else if (pendingAction.action === 'announcement') {
+                        // 执行编辑公告操作
+                        showAnnouncementModal();
+                    }
+                }
+                
+                // 清空pendingAction
+                pendingAction = null;
+            } else {
+                alert('密码错误，请重新输入！');
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+
+        // 密码弹窗事件
+        passwordConfirm.addEventListener('click', verifyPassword);
+        passwordCancel.addEventListener('click', hidePasswordModal);
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                verifyPassword();
+            }
         });
 
         // 登录弹窗事件
         loginConfirm.addEventListener('click', login);
         loginCancel.addEventListener('click', hideLoginModal);
-        registerLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            hideLoginModal();
-            showRegisterModal();
-        });
-
-        // 注册弹窗事件
-        registerConfirmBtn.addEventListener('click', register);
-        registerCancel.addEventListener('click', hideRegisterModal);
-        backToLogin.addEventListener('click', function(e) {
-            e.preventDefault();
-            hideRegisterModal();
-            showLoginModal();
+        loginPassword.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
         });
 
         // 点击关闭灯箱
@@ -3254,663 +2897,42 @@ function getStaticHTML() {
                 } else if (editModal.classList.contains('active')) {
                     closeEditModal();
                 } else if (passwordModal.classList.contains('active')) {
-                    passwordModal.classList.remove('active');
-                    document.body.style.overflow = 'auto';
+                    hidePasswordModal();
                 } else if (document.getElementById('announcement-modal').classList.contains('active')) {
                     hideAnnouncementModal();
                 } else if (loginModal.classList.contains('active')) {
                     hideLoginModal();
-                } else if (registerModal.classList.contains('active')) {
-                    hideRegisterModal();
                 }
             }
         });
 
-        // 点击弹窗外部关闭弹窗
+        // 点击弹窗外部关闭编辑弹窗
         editModal.addEventListener('click', (e) => {
             if (e.target === editModal) {
                 closeEditModal();
             }
         });
 
+        // 点击弹窗外部关闭密码弹窗
         passwordModal.addEventListener('click', (e) => {
             if (e.target === passwordModal) {
-                passwordModal.classList.remove('active');
-                document.body.style.overflow = 'auto';
+                hidePasswordModal();
             }
         });
 
+        // 点击弹窗外部关闭公告弹窗
         document.getElementById('announcement-modal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('announcement-modal')) {
                 hideAnnouncementModal();
             }
         });
 
+        // 点击弹窗外部关闭登录弹窗
         loginModal.addEventListener('click', (e) => {
             if (e.target === loginModal) {
                 hideLoginModal();
             }
         });
-
-        registerModal.addEventListener('click', (e) => {
-            if (e.target === registerModal) {
-                hideRegisterModal();
-            }
-        });
     </script>
 </body>
-</html>`;
-}
-
-// 静态资源处理
-async function handleStaticAssets(request, env) {
-    const url = new URL(request.url);
-    const pathname = url.pathname;
-    
-    // 如果是图片资源，从R2获取
-    if (pathname.startsWith('/images/')) {
-        const key = pathname.substring(8); // 移除 /images/ 前缀
-        try {
-            const object = await env.IMAGE_BUCKET.get(key);
-            if (object === null) {
-                return new Response('Not Found', { status: 404 });
-            }
-            
-            const headers = new Headers();
-            object.writeHttpMetadata(headers);
-            headers.set('etag', object.httpEtag);
-            
-            return new Response(object.body, {
-                headers
-            });
-        } catch (error) {
-            return new Response('Error fetching image', { status: 500 });
-        }
-    }
-    
-    return new Response('Not Found', { status: 404 });
-}
-
-// CORS 头部
-const CORS_HEADERS = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Content-Type': 'application/json'
-};
-
-// 处理所有API请求
-async function handleAPI(request, env, pathname) {
-    // 处理 OPTIONS 预检请求
-    if (request.method === 'OPTIONS') {
-        return new Response(null, {
-            headers: CORS_HEADERS
-        });
-    }
-    
-    try {
-        switch (pathname) {
-            case '/api/albums':
-                return handleGetAlbums(env);
-            case '/api/upload':
-                return handleUpload(request, env);
-            case '/api/delete':
-                return handleDelete(request, env);
-            case '/api/like':
-                return handleLike(request, env);
-            case '/api/comment':
-                return handleComment(request, env);
-            case '/api/announcement':
-                return handleAnnouncement(request, env);
-            case '/api/register':
-                return handleRegister(request, env);
-            case '/api/login':
-                return handleLogin(request, env);
-            case '/api/users':
-                return handleGetUsers(env);
-            case '/api/make-admin':
-                return handleMakeAdmin(request, env);
-            case '/api/remove-admin':
-                return handleRemoveAdmin(request, env);
-            case '/api/delete-user':
-                return handleDeleteUser(request, env);
-            default:
-                return new Response('API Not Found', { status: 404 });
-        }
-    } catch (error) {
-        return new Response(JSON.stringify({ 
-            success: false, 
-            error: error.message 
-        }), {
-            status: 500,
-            headers: { 
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            }
-        });
-    }
-}
-
-// 获取所有相册
-async function handleGetAlbums(env) {
-    try {
-        const keys = await env.ALBUM_KV.list({ prefix: 'album_' });
-        const albums = [];
-        
-        for (const key of keys.keys) {
-            const value = await env.ALBUM_KV.get(key.name);
-            if (value) {
-                albums.push(JSON.parse(value));
-            }
-        }
-        
-        // 按日期倒序排列
-        albums.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        return new Response(JSON.stringify(albums), {
-            headers: CORS_HEADERS
-        });
-    } catch (error) {
-        return new Response(JSON.stringify([]), {
-            headers: CORS_HEADERS
-        });
-    }
-}
-
-// 上传图片
-async function handleUpload(request, env) {
-    try {
-        const contentType = request.headers.get('content-type') || '';
-        if (!contentType.includes('multipart/form-data')) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: 'Content-Type must be multipart/form-data' 
-            }), {
-                status: 400,
-                headers: CORS_HEADERS
-            });
-        }
-
-        const formData = await request.formData();
-        const file = formData.get('file');
-        const metadata = JSON.parse(formData.get('metadata'));
-        
-        if (!file) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '缺少文件' 
-            }), {
-                status: 400,
-                headers: CORS_HEADERS
-            });
-        }
-
-        // 生成唯一文件名
-        const fileExtension = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
-        
-        // 上传到R2
-        await env.IMAGE_BUCKET.put(fileName, file);
-        
-        const albumId = Date.now().toString();
-        const imageUrl = `/images/${fileName}`;
-        
-        const albumData = {
-            id: parseInt(albumId),
-            title: metadata.title || '未命名',
-            desc: metadata.desc || '',
-            category: metadata.category || 'candid',
-            date: metadata.date || new Date().toISOString().split('T')[0],
-            img: imageUrl,
-            likes: 0,
-            liked: false,
-            comments: []
-        };
-        
-        await env.ALBUM_KV.put(`album_${albumId}`, JSON.stringify(albumData));
-        
-        return new Response(JSON.stringify({ 
-            success: true, 
-            data: albumData 
-        }), {
-            headers: CORS_HEADERS
-        });
-    } catch (error) {
-        return new Response(JSON.stringify({ 
-            success: false, 
-            error: '上传失败: ' + error.message 
-        }), {
-            status: 500,
-            headers: CORS_HEADERS
-        });
-    }
-}
-
-// 删除图片
-async function handleDelete(request, env) {
-    try {
-        const data = await request.json();
-        const { id } = data;
-        
-        if (!id) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '缺少ID参数' 
-            }), {
-                status: 400,
-                headers: CORS_HEADERS
-            });
-        }
-
-        // 从KV删除记录
-        await env.ALBUM_KV.delete(`album_${id}`);
-        
-        return new Response(JSON.stringify({ 
-            success: true, 
-            message: '删除成功' 
-        }), {
-            headers: CORS_HEADERS
-        });
-    } catch (error) {
-        return new Response(JSON.stringify({ 
-            success: false, 
-            error: '删除失败: ' + error.message 
-        }), {
-            status: 500,
-            headers: CORS_HEADERS
-        });
-    }
-}
-
-// 点赞处理
-async function handleLike(request, env) {
-    try {
-        const data = await request.json();
-        const { albumId, liked, likes } = data;
-        
-        if (albumId === undefined) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '缺少相册ID' 
-            }), {
-                status: 400,
-                headers: CORS_HEADERS
-            });
-        }
-
-        const albumKey = `album_${albumId}`;
-        const albumData = await env.ALBUM_KV.get(albumKey);
-        
-        if (!albumData) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '相册不存在' 
-            }), {
-                status: 404,
-                headers: CORS_HEADERS
-            });
-        }
-
-        const album = JSON.parse(albumData);
-        album.liked = liked;
-        album.likes = likes;
-        
-        await env.ALBUM_KV.put(albumKey, JSON.stringify(album));
-        
-        return new Response(JSON.stringify({ 
-            success: true 
-        }), {
-            headers: CORS_HEADERS
-        });
-    } catch (error) {
-        return new Response(JSON.stringify({ 
-            success: false, 
-            error: '点赞失败: ' + error.message 
-        }), {
-            status: 500,
-            headers: CORS_HEADERS
-        });
-    }
-}
-
-// 评论处理
-async function handleComment(request, env) {
-    try {
-        const data = await request.json();
-        const { albumId, comment } = data;
-        
-        if (!albumId || !comment) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '缺少参数' 
-            }), {
-                status: 400,
-                headers: CORS_HEADERS
-            });
-        }
-
-        const albumKey = `album_${albumId}`;
-        const albumData = await env.ALBUM_KV.get(albumKey);
-        
-        if (!albumData) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '相册不存在' 
-            }), {
-                status: 404,
-                headers: CORS_HEADERS
-            });
-        }
-
-        const album = JSON.parse(albumData);
-        album.comments = album.comments || [];
-        album.comments.push({
-            author: comment.author || '匿名用户',
-            text: comment.text,
-            time: comment.time || new Date().toLocaleString('zh-CN')
-        });
-        
-        await env.ALBUM_KV.put(albumKey, JSON.stringify(album));
-        
-        return new Response(JSON.stringify({ 
-            success: true 
-        }), {
-            headers: CORS_HEADERS
-        });
-    } catch (error) {
-        return new Response(JSON.stringify({ 
-            success: false, 
-            error: '评论失败: ' + error.message 
-        }), {
-            status: 500,
-            headers: CORS_HEADERS
-        });
-    }
-}
-
-// 公告处理
-async function handleAnnouncement(request, env) {
-    try {
-        if (request.method === 'GET') {
-            const content = await env.ALBUM_KV.get('announcement') || '欢迎来到郑秀彬专属相册集！这里珍藏着秀彬的每一个精彩瞬间。请尽情欣赏并留下您的宝贵评论。';
-            return new Response(JSON.stringify({ content }), {
-                headers: CORS_HEADERS
-            });
-        } else {
-            const data = await request.json();
-            await env.ALBUM_KV.put('announcement', data.content);
-            return new Response(JSON.stringify({ success: true }), {
-                headers: CORS_HEADERS
-            });
-        }
-    } catch (error) {
-        return new Response(JSON.stringify({ 
-            success: false, 
-            error: '公告操作失败: ' + error.message 
-        }), {
-            status: 500,
-            headers: CORS_HEADERS
-        });
-    }
-}
-
-// 用户注册
-async function handleRegister(request, env) {
-    try {
-        const data = await request.json();
-        const { username, password } = data;
-        
-        if (!username || !password) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '用户名和密码不能为空' 
-            }), {
-                status: 400,
-                headers: CORS_HEADERS
-            });
-        }
-        
-        // 检查用户名是否已存在
-        const existingUser = await env.ALBUM_KV.get(`user_${username}`);
-        if (existingUser) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '用户名已存在' 
-            }), {
-                status: 400,
-                headers: CORS_HEADERS
-            });
-        }
-        
-        // 创建新用户（密码简单存储，实际应该加密）
-        const user = {
-            username: username,
-            password: password, // 实际应该哈希存储
-            isAdmin: false,
-            createdAt: new Date().toISOString()
-        };
-        
-        await env.ALBUM_KV.put(`user_${username}`, JSON.stringify(user));
-        
-        // 不返回密码
-        const userResponse = { ...user };
-        delete userResponse.password;
-        
-        return new Response(JSON.stringify({ 
-            success: true,
-            user: userResponse
-        }), {
-            headers: CORS_HEADERS
-        });
-    } catch (error) {
-        return new Response(JSON.stringify({ 
-            success: false, 
-            error: '注册失败: ' + error.message 
-        }), {
-            status: 500,
-            headers: CORS_HEADERS
-        });
-    }
-}
-
-// 用户登录
-async function handleLogin(request, env) {
-    try {
-        const data = await request.json();
-        const { username, password } = data;
-        
-        if (!username || !password) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '用户名和密码不能为空' 
-            }), {
-                status: 400,
-                headers: CORS_HEADERS
-            });
-        }
-        
-        // 获取用户信息
-        const userData = await env.ALBUM_KV.get(`user_${username}`);
-        if (!userData) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '用户不存在' 
-            }), {
-                status: 404,
-                headers: CORS_HEADERS
-            });
-        }
-        
-        const user = JSON.parse(userData);
-        
-        // 验证密码
-        if (user.password !== password) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '密码错误' 
-            }), {
-                status: 401,
-                headers: CORS_HEADERS
-            });
-        }
-        
-        // 不返回密码
-        const userResponse = { ...user };
-        delete userResponse.password;
-        
-        return new Response(JSON.stringify({ 
-            success: true,
-            user: userResponse
-        }), {
-            headers: CORS_HEADERS
-        });
-    } catch (error) {
-        return new Response(JSON.stringify({ 
-            success: false, 
-            error: '登录失败: ' + error.message 
-        }), {
-            status: 500,
-            headers: CORS_HEADERS
-        });
-    }
-}
-
-// 获取所有用户（仅管理员）
-async function handleGetUsers(env) {
-    try {
-        const keys = await env.ALBUM_KV.list({ prefix: 'user_' });
-        const users = [];
-        
-        for (const key of keys.keys) {
-            const value = await env.ALBUM_KV.get(key.name);
-            if (value) {
-                const user = JSON.parse(value);
-                // 不返回密码
-                delete user.password;
-                users.push(user);
-            }
-        }
-        
-        return new Response(JSON.stringify(users), {
-            headers: CORS_HEADERS
-        });
-    } catch (error) {
-        return new Response(JSON.stringify([]), {
-            headers: CORS_HEADERS
-        });
-    }
-}
-
-// 设置管理员权限
-async function handleMakeAdmin(request, env) {
-    try {
-        const data = await request.json();
-        const { username } = data;
-        
-        // 获取用户信息
-        const userData = await env.ALBUM_KV.get(`user_${username}`);
-        if (!userData) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '用户不存在' 
-            }), {
-                status: 404,
-                headers: CORS_HEADERS
-            });
-        }
-        
-        const user = JSON.parse(userData);
-        user.isAdmin = true;
-        
-        await env.ALBUM_KV.put(`user_${username}`, JSON.stringify(user));
-        
-        // 不返回密码
-        const userResponse = { ...user };
-        delete userResponse.password;
-        
-        return new Response(JSON.stringify({ 
-            success: true,
-            user: userResponse
-        }), {
-            headers: CORS_HEADERS
-        });
-    } catch (error) {
-        return new Response(JSON.stringify({ 
-            success: false, 
-            error: '设置管理员失败: ' + error.message 
-        }), {
-            status: 500,
-            headers: CORS_HEADERS
-        });
-    }
-}
-
-// 取消管理员权限
-async function handleRemoveAdmin(request, env) {
-    try {
-        const data = await request.json();
-        const { username } = data;
-        
-        // 获取用户信息
-        const userData = await env.ALBUM_KV.get(`user_${username}`);
-        if (!userData) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                error: '用户不存在' 
-            }), {
-                status: 404,
-                headers: CORS_HEADERS
-            });
-        }
-        
-        const user = JSON.parse(userData);
-        user.isAdmin = false;
-        
-        await env.ALBUM_KV.put(`user_${username}`, JSON.stringify(user));
-        
-        // 不返回密码
-        const userResponse = { ...user };
-        delete userResponse.password;
-        
-        return new Response(JSON.stringify({ 
-            success: true,
-            user: userResponse
-        }), {
-            headers: CORS_HEADERS
-        });
-    } catch (error) {
-        return new Response(JSON.stringify({ 
-            success: false, 
-            error: '取消管理员失败: ' + error.message 
-        }), {
-            status: 500,
-            headers: CORS_HEADERS
-        });
-    }
-}
-
-// 删除用户
-async function handleDeleteUser(request, env) {
-    try {
-        const data = await request.json();
-        const { username } = data;
-        
-        // 删除用户
-        await env.ALBUM_KV.delete(`user_${username}`);
-        
-        return new Response(JSON.stringify({ 
-            success: true,
-            message: '用户删除成功' 
-        }), {
-            headers: CORS_HEADERS
-        });
-    } catch (error) {
-        return new Response(JSON.stringify({ 
-            success: false, 
-            error: '删除用户失败: ' + error.message 
-        }), {
-            status: 500,
-            headers: CORS_HEADERS
-        });
-    }
-}
+</html>
