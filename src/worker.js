@@ -2438,7 +2438,7 @@ async function handleUpload(request, env) {
         console.log('Saving album data to KV:', albumData);
         
         try {
-            await env.ALBUM_KV2.put(\`album_\${albumId}\`, JSON.stringify(albumData));
+            await env.ALBUM_KV2.put('album_' + albumId, JSON.stringify(albumData));
             console.log('Album data saved to KV successfully');
         } catch (kvError) {
             console.error('KV save error:', kvError);
