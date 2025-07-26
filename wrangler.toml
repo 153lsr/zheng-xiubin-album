@@ -12,3 +12,8 @@ bucket_name = "zheng-xiubin-images"
 
 [placement]
 mode = "smart"
+
+# 添加路由配置（如果需要自定义域名）
+# [[routes]]
+# pattern = "your-domain.com/*"
+# zone_name = "your-domain.com"
