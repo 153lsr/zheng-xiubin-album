@@ -1947,21 +1947,17 @@ function getStaticHTML() {
             loginSection.innerHTML = '';
             
             if (isAdmin) {
-                loginSection.innerHTML = \`
-                    <div class="user-info" title="管理员已登录">
-                        <i class="fas fa-user-shield"></i>
-                    </div>
-                    <button class="logout-btn" id="logout-btn" title="退出管理员">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                \`;
+                loginSection.innerHTML = '<div class="user-info" title="管理员已登录">' +
+                    '<i class="fas fa-user-shield"></i>' +
+                    '</div>' +
+                    '<button class="logout-btn" id="logout-btn" title="退出管理员">' +
+                    '<i class="fas fa-sign-out-alt"></i>' +
+                    '</button>';
                 document.getElementById('logout-btn').addEventListener('click', logout);
             } else {
-                loginSection.innerHTML = \`
-                    <button class="login-btn" id="login-btn" title="管理员登录">
-                        <i class="fas fa-user-lock"></i>
-                    </button>
-                \`;
+                loginSection.innerHTML = '<button class="login-btn" id="login-btn" title="管理员登录">' +
+                    '<i class="fas fa-user-lock"></i>' +
+                    '</button>';
                 document.getElementById('login-btn').addEventListener('click', showLoginModal);
             }
         }
@@ -2022,21 +2018,19 @@ function getStaticHTML() {
                 
                 // 格式化日期显示
                 const dateObj = new Date(album.date);
-                const formattedDate = \`\${dateObj.getFullYear()}年\${dateObj.getMonth()+1}月\${dateObj.getDate()}日\`;
+                const formattedDate = dateObj.getFullYear() + '年' + (dateObj.getMonth() + 1) + '月' + dateObj.getDate() + '日';
                 
-                albumItem.innerHTML = \`
-                    <img class="album-img" src="\${album.img}" alt="\${album.title}" data-id="\${album.id}">
-                    <div class="album-overlay">
-                        <h3 class="album-title">\${album.title}</h3>
-                        <p class="album-desc">\${album.desc}</p>
-                        <div class="album-meta">
-                            <span><i class="fas fa-heart"></i> \${album.likes || 0}</span>
-                            <span><i class="fas fa-comment"></i> \${album.comments ? album.comments.length : 0}</span>
-                        </div>
-                        <div class="album-date">\${formattedDate}</div>
-                    </div>
-                    <button class="delete-btn" data-id="\${album.id}"><i class="fas fa-trash"></i></button>
-                \`;
+                albumItem.innerHTML = '<img class="album-img" src="' + album.img + '" alt="' + album.title + '" data-id="' + album.id + '">' +
+                    '<div class="album-overlay">' +
+                    '<h3 class="album-title">' + album.title + '</h3>' +
+                    '<p class="album-desc">' + album.desc + '</p>' +
+                    '<div class="album-meta">' +
+                    '<span><i class="fas fa-heart"></i> ' + (album.likes || 0) + '</span>' +
+                    '<span><i class="fas fa-comment"></i> ' + (album.comments ? album.comments.length : 0) + '</span>' +
+                    '</div>' +
+                    '<div class="album-date">' + formattedDate + '</div>' +
+                    '</div>' +
+                    '<button class="delete-btn" data-id="' + album.id + '"><i class="fas fa-trash"></i></button>';
                 
                 // 图片点击事件处理
                 const imgElement = albumItem.querySelector('.album-img');
@@ -2115,7 +2109,7 @@ function getStaticHTML() {
 
         // 更新图片变换
         function updateImageTransform() {
-            lightboxImg.style.transform = \`scale(\${scale}) translate(\${translateX}px, \${translateY}px)\`;
+            lightboxImg.style.transform = 'scale(' + scale + ') translate(' + translateX + 'px, ' + translateY + 'px)';
         }
 
         // ... 其他JavaScript函数保持不变 ...
@@ -2142,7 +2136,7 @@ function getStaticHTML() {
             const year = editYear.value;
             const month = editMonth.value;
             const day = new Date().getDate().toString().padStart(2, '0');
-            const dateStr = \`\${year}-\${month}-\${day}\`;
+            const dateStr = year + '-' + month + '-' + day; // 修正了这里，虽然不是在HTML内部，但保持一致性
             
             // 准备上传数据
             const formData = new FormData();
@@ -2167,7 +2161,7 @@ function getStaticHTML() {
                 
                 // 检查响应状态
                 if (!response.ok) {
-                    throw new Error(\`服务器响应错误: \${response.status} \${response.statusText}\`);
+                    throw new Error('服务器响应错误: ' + response.status + ' ' + response.statusText);
                 }
                 
                 // 尝试解析JSON
@@ -2401,7 +2395,7 @@ async function handleUpload(request, env) {
         // 生成唯一文件名
         const timestamp = Date.now();
         const randomStr = Math.random().toString(36).substr(2, 9);
-        const fileName = timestamp + '_' + randomStr + '.' + fileExtension;
+        const fileName = `${timestamp}_${randomStr}.${fileExtension}`; // 服务器端代码，可以使用模板字符串
         
         console.log('Uploading file to R2:', fileName);
         
@@ -2421,14 +2415,14 @@ async function handleUpload(request, env) {
         }
         
         const albumId = timestamp.toString();
-        const imageUrl = '/images/' + fileName;
+        const imageUrl = `/images/${fileName}`; // 服务器端代码，可以使用模板字符串
         
         const albumData = {
             id: parseInt(albumId),
             title: metadata.title || '未命名',
             desc: metadata.desc || '',
             category: metadata.category || 'candid',
-            date: metadata.date || new Date().toISOString().split('T')[0],
+            date: metadata.date || new Date().toISOString().split('T'),
             img: imageUrl,
             likes: 0,
             liked: false,
@@ -2438,7 +2432,7 @@ async function handleUpload(request, env) {
         console.log('Saving album data to KV:', albumData);
         
         try {
-            await env.ALBUM_KV2.put('album_' + albumId, JSON.stringify(albumData));
+            await env.ALBUM_KV2.put(`album_${albumId}`, JSON.stringify(albumData)); // 服务器端代码，可以使用模板字符串
             console.log('Album data saved to KV successfully');
         } catch (kvError) {
             console.error('KV save error:', kvError);
@@ -2493,7 +2487,7 @@ async function handleDelete(request, env) {
         }
 
         // 从KV删除记录
-        await env.ALBUM_KV2.delete(\`album_\${id}\`);
+        await env.ALBUM_KV2.delete(`album_${id}`); // 服务器端代码，可以使用模板字符串
         
         return new Response(JSON.stringify({ 
             success: true, 
@@ -2528,7 +2522,7 @@ async function handleLike(request, env) {
             });
         }
 
-        const albumKey = \`album_\${albumId}\`;
+        const albumKey = `album_${albumId}`; // 服务器端代码，可以使用模板字符串
         const albumData = await env.ALBUM_KV2.get(albumKey);
         
         if (!albumData) {
@@ -2579,7 +2573,7 @@ async function handleComment(request, env) {
             });
         }
 
-        const albumKey = \`album_\${albumId}\`;
+        const albumKey = `album_${albumId}`; // 服务器端代码，可以使用模板字符串
         const albumData = await env.ALBUM_KV2.get(albumKey);
         
         if (!albumData) {
