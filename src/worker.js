@@ -2421,7 +2421,7 @@ async function handleUpload(request, env) {
         }
         
         const albumId = timestamp.toString();
-        const imageUrl = \`/images/\${fileName}\`;
+        const imageUrl = '/images/' + fileName;
         
         const albumData = {
             id: parseInt(albumId),
