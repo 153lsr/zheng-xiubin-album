@@ -3144,6 +3144,12 @@ async function handleAnnouncement(request, env) {
         });
     }
 }
+ 
+} // <-- 这个闭合花括号是在 handleAPI 函数结束后的缺失部分
+ 
+// <-- 这里还需要一个闭合花括号来结束整个 export default 对象
+}
+
 (request.url);
         const pathname = url.pathname;
         
