@@ -3394,11 +3394,11 @@ async function handleAPI(request, env, pathname) {
 // 获取所有相册
 async function handleGetAlbums(env) {
     try {
-        const keys = await env.ALBUM_KV.list({ prefix: 'album_' });
+        const keys = await env.ALBUM_KV2.list({ prefix: 'album_' });
         const albums = [];
         
         for (const key of keys.keys) {
-            const value = await env.ALBUM_KV.get(key.name);
+            const value = await env.ALBUM_KV2.get(key.name);
             if (value) {
                 albums.push(JSON.parse(value));
             }
@@ -3467,7 +3467,7 @@ async function handleUpload(request, env) {
             comments: []
         };
         
-        await env.ALBUM_KV.put(`album_${albumId}`, JSON.stringify(albumData));
+        await env.ALBUM_KV2.put(`album_${albumId}`, JSON.stringify(albumData));
         
         return new Response(JSON.stringify({ 
             success: true, 
@@ -3503,7 +3503,7 @@ async function handleDelete(request, env) {
         }
 
         // 从KV删除记录
-        await env.ALBUM_KV.delete(`album_${id}`);
+        await env.ALBUM_KV2.delete(`album_${id}`);
         
         return new Response(JSON.stringify({ 
             success: true, 
@@ -3539,7 +3539,7 @@ async function handleLike(request, env) {
         }
 
         const albumKey = `album_${albumId}`;
-        const albumData = await env.ALBUM_KV.get(albumKey);
+        const albumData = await env.ALBUM_KV2.get(albumKey);
         
         if (!albumData) {
             return new Response(JSON.stringify({ 
@@ -3555,7 +3555,7 @@ async function handleLike(request, env) {
         album.liked = liked;
         album.likes = likes;
         
-        await env.ALBUM_KV.put(albumKey, JSON.stringify(album));
+        await env.ALBUM_KV2.put(albumKey, JSON.stringify(album));
         
         return new Response(JSON.stringify({ 
             success: true 
@@ -3590,7 +3590,7 @@ async function handleComment(request, env) {
         }
 
         const albumKey = `album_${albumId}`;
-        const albumData = await env.ALBUM_KV.get(albumKey);
+        const albumData = await env.ALBUM_KV2.get(albumKey);
         
         if (!albumData) {
             return new Response(JSON.stringify({ 
@@ -3610,7 +3610,7 @@ async function handleComment(request, env) {
             time: comment.time || new Date().toLocaleString('zh-CN')
         });
         
-        await env.ALBUM_KV.put(albumKey, JSON.stringify(album));
+        await env.ALBUM_KV2.put(albumKey, JSON.stringify(album));
         
         return new Response(JSON.stringify({ 
             success: true 
@@ -3632,13 +3632,13 @@ async function handleComment(request, env) {
 async function handleAnnouncement(request, env) {
     try {
         if (request.method === 'GET') {
-            const content = await env.ALBUM_KV.get('announcement') || '欢迎来到郑秀彬专属相册集！这里珍藏着秀彬的每一个精彩瞬间。请尽情欣赏并留下您的宝贵评论。';
+            const content = await env.ALBUM_KV2.get('announcement') || '欢迎来到郑秀彬专属相册集！这里珍藏着秀彬的每一个精彩瞬间。请尽情欣赏并留下您的宝贵评论。';
             return new Response(JSON.stringify({ content }), {
                 headers: CORS_HEADERS
             });
         } else {
             const data = await request.json();
-            await env.ALBUM_KV.put('announcement', data.content);
+            await env.ALBUM_KV2.put('announcement', data.content);
             return new Response(JSON.stringify({ success: true }), {
                 headers: CORS_HEADERS
             });
@@ -3671,7 +3671,7 @@ async function handleRegister(request, env) {
         }
         
         // 检查用户名是否已存在
-        const existingUser = await env.ALBUM_KV.get(`user_${username}`);
+        const existingUser = await env.ALBUM_KV2.get(`user_${username}`);
         if (existingUser) {
             return new Response(JSON.stringify({ 
                 success: false, 
@@ -3690,7 +3690,7 @@ async function handleRegister(request, env) {
             createdAt: new Date().toISOString()
         };
         
-        await env.ALBUM_KV.put(`user_${username}`, JSON.stringify(user));
+        await env.ALBUM_KV2.put(`user_${username}`, JSON.stringify(user));
         
         // 不返回密码
         const userResponse = { ...user };
@@ -3730,7 +3730,7 @@ async function handleLogin(request, env) {
         }
         
         // 获取用户信息
-        const userData = await env.ALBUM_KV.get(`user_${username}`);
+        const userData = await env.ALBUM_KV2.get(`user_${username}`);
         if (!userData) {
             return new Response(JSON.stringify({ 
                 success: false, 
@@ -3778,11 +3778,11 @@ async function handleLogin(request, env) {
 // 获取所有用户（仅管理员）
 async function handleGetUsers(env) {
     try {
-        const keys = await env.ALBUM_KV.list({ prefix: 'user_' });
+        const keys = await env.ALBUM_KV2.list({ prefix: 'user_' });
         const users = [];
         
         for (const key of keys.keys) {
-            const value = await env.ALBUM_KV.get(key.name);
+            const value = await env.ALBUM_KV2.get(key.name);
             if (value) {
                 const user = JSON.parse(value);
                 // 不返回密码
@@ -3808,7 +3808,7 @@ async function handleMakeAdmin(request, env) {
         const { username } = data;
         
         // 获取用户信息
-        const userData = await env.ALBUM_KV.get(`user_${username}`);
+        const userData = await env.ALBUM_KV2.get(`user_${username}`);
         if (!userData) {
             return new Response(JSON.stringify({ 
                 success: false, 
@@ -3822,7 +3822,7 @@ async function handleMakeAdmin(request, env) {
         const user = JSON.parse(userData);
         user.isAdmin = true;
         
-        await env.ALBUM_KV.put(`user_${username}`, JSON.stringify(user));
+        await env.ALBUM_KV2.put(`user_${username}`, JSON.stringify(user));
         
         // 不返回密码
         const userResponse = { ...user };
@@ -3852,7 +3852,7 @@ async function handleRemoveAdmin(request, env) {
         const { username } = data;
         
         // 获取用户信息
-        const userData = await env.ALBUM_KV.get(`user_${username}`);
+        const userData = await env.ALBUM_KV2.get(`user_${username}`);
         if (!userData) {
             return new Response(JSON.stringify({ 
                 success: false, 
@@ -3866,7 +3866,7 @@ async function handleRemoveAdmin(request, env) {
         const user = JSON.parse(userData);
         user.isAdmin = false;
         
-        await env.ALBUM_KV.put(`user_${username}`, JSON.stringify(user));
+        await env.ALBUM_KV2.put(`user_${username}`, JSON.stringify(user));
         
         // 不返回密码
         const userResponse = { ...user };
@@ -3896,7 +3896,7 @@ async function handleDeleteUser(request, env) {
         const { username } = data;
         
         // 删除用户
-        await env.ALBUM_KV.delete(`user_${username}`);
+        await env.ALBUM_KV2.delete(`user_${username}`);
         
         return new Response(JSON.stringify({ 
             success: true,
