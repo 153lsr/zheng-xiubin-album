@@ -5,21 +5,21 @@ export default {
         
         // API路由处理
         if (pathname.startsWith('/api/')) {
-            return handleAPI(request, env， pathname);
+            return handleAPI(request, env, pathname);
         }
         
         // 静态文件服务
         if (pathname === '/' || pathname === '/index.html') {
             return new Response(getStaticHTML(), {
                 headers: { 
-                    'Content-Type': 'text/html; charset=utf-8'，
+                    'Content-Type': 'text/html; charset=utf-8',
                     'Cache-Control': 'public, max-age=3600'
                 }
             });
         }
         
         // 其他静态资源
-        return await handleStaticAssets(request， env);
+        return await handleStaticAssets(request, env);
     }
 };
 
@@ -2374,10 +2374,10 @@ async function handleUpload(request, env) {
         }
 
         // 获取文件扩展名
-        const fileExtensionension = file.name.split('.').pop().toLowerCase();
+        const fileExtension = file.name.split('.').pop().toLowerCase();
         const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         
-        if (!validExtensions.includes(fileExtensionension)) {
+        if (!validExtensions.includes(fileExtension)) {
             return new Response(JSON.stringify({ 
                 success: false, 
                 error: '不支持的文件格式。请上传 JPG, PNG, GIF, 或 WebP 格式的图片' 
@@ -2438,7 +2438,7 @@ async function handleUpload(request, env) {
         console.log('Saving album data to KV:', albumData);
         
         try {
-            await env.ALBUM_KV2.put(\`album_${albumId}\`, JSON.stringify(albumData));
+            await env.ALBUM_KV2.put(`album_${albumId}`, JSON.stringify(albumData));
             console.log('Album data saved to KV successfully');
         } catch (kvError) {
             console.error('KV save error:', kvError);
@@ -2493,7 +2493,7 @@ async function handleDelete(request, env) {
         }
 
         // 从KV删除记录
-        await env.ALBUM_KV2.delete(\`album_${id}\`);
+        await env.ALBUM_KV2.delete(`album_${id}`);
         
         return new Response(JSON.stringify({ 
             success: true, 
@@ -2528,7 +2528,7 @@ async function handleLike(request, env) {
             });
         }
 
-        const albumKey = \`album_${albumId}\`;
+        const albumKey = `album_${albumId}`;
         const albumData = await env.ALBUM_KV2.get(albumKey);
         
         if (!albumData) {
@@ -2579,7 +2579,7 @@ async function handleComment(request, env) {
             });
         }
 
-        const albumKey = \`album_${albumId}\`;
+        const albumKey = `album_${albumId}`;
         const albumData = await env.ALBUM_KV2.get(albumKey);
         
         if (!albumData) {
@@ -2595,7 +2595,7 @@ async function handleComment(request, env) {
         const album = JSON.parse(albumData);
         album.comments = album.comments || [];
         album.comments.push({
-            author: comment.author || '匿名用户',
+            author: 评论.author || '匿名用户',
             text: comment.text,
             time: comment.time || new Date().toLocaleString('zh-CN')
         });
