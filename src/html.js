@@ -2415,6 +2415,24 @@ export function getHTML() {
             });
             if (annCancel) annCancel.addEventListener('click', hideAnnouncementModal);
             if (annModal) annModal.addEventListener('click', function(e) { if (e.target === annModal) hideAnnouncementModal(); });
+
+            // 编辑故事弹窗相关
+            const storyModal = document.getElementById('story-modal');
+            const storyTextarea = document.getElementById('story-textarea');
+            const storySaveBtn = document.getElementById('story-save');
+            const storyCancelBtn = document.getElementById('story-cancel');
+            const editStoryBtn = document.getElementById('edit-story-btn');
+
+            if (editStoryBtn) editStoryBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                openStoryModal();
+            });
+            if (storySaveBtn) storySaveBtn.addEventListener('click', saveStory);
+            if (storyCancelBtn) storyCancelBtn.addEventListener('click', closeStoryModal);
+            if (storyModal) storyModal.addEventListener('click', function(e) {
+                if (e.target === storyModal) closeStoryModal();
+            });
+
 // Lightbox：关闭/上一张/下一张/点赞/弹幕
 if (closeLightbox) closeLightbox.addEventListener('click', closeLightboxUI);
 if (lightbox) lightbox.addEventListener('click', function(e) { if (e.target === lightbox) closeLightboxUI(); });
@@ -3030,14 +3048,11 @@ async function handleLikeClick() {
 }
 
 // ===== 编辑图片故事功能 =====
-const storyModal = document.getElementById('story-modal');
-const storyTextarea = document.getElementById('story-textarea');
-const storySaveBtn = document.getElementById('story-save');
-const storyCancelBtn = document.getElementById('story-cancel');
-const editStoryBtn = document.getElementById('edit-story-btn');
-
 function openStoryModal() {
     if (!currentAlbumId) return;
+
+    const storyModal = document.getElementById('story-modal');
+    const storyTextarea = document.getElementById('story-textarea');
 
     // 获取当前图片的描述
     const album = albums.find(a => a.id === currentAlbumId);
@@ -3049,6 +3064,7 @@ function openStoryModal() {
 }
 
 function closeStoryModal() {
+    const storyModal = document.getElementById('story-modal');
     if (storyModal) storyModal.classList.remove('active');
 }
 
@@ -3058,6 +3074,7 @@ async function saveStory() {
         return;
     }
 
+    const storyTextarea = document.getElementById('story-textarea');
     const newDesc = storyTextarea ? storyTextarea.value.trim() : '';
 
     try {
@@ -3097,17 +3114,6 @@ async function saveStory() {
         alert('保存失败：' + error.message);
     }
 }
-
-// 绑定编辑故事事件
-if (editStoryBtn) editStoryBtn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    openStoryModal();
-});
-if (storySaveBtn) storySaveBtn.addEventListener('click', saveStory);
-if (storyCancelBtn) storyCancelBtn.addEventListener('click', closeStoryModal);
-if (storyModal) storyModal.addEventListener('click', function(e) {
-    if (e.target === storyModal) closeStoryModal();
-});
 
 async function sendDanmu() {
     const txt = (danmuInput && danmuInput.value) ? danmuInput.value.trim() : '';
