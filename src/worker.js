@@ -5,21 +5,21 @@ export default {
         
         // API路由处理
         if (pathname.startsWith('/api/')) {
-            return handleAPI(request, env, pathname);
+            return handleAPI(request, env， pathname);
         }
         
         // 静态文件服务
         if (pathname === '/' || pathname === '/index.html') {
             return new Response(getStaticHTML(), {
                 headers: { 
-                    'Content-Type': 'text/html; charset=utf-8',
+                    'Content-Type': 'text/html; charset=utf-8'，
                     'Cache-Control': 'public, max-age=3600'
                 }
             });
         }
         
         // 其他静态资源
-        return await handleStaticAssets(request, env);
+        return await handleStaticAssets(request， env);
     }
 };
 
@@ -1711,7 +1711,7 @@ function getStaticHTML() {
                     <div class="edit-form-group">
                         <label for="edit-title"><i class="fas fa-heading"></i> 图片标题:</label>
                         <input type="text" id="edit-title" required placeholder="给这张美美的照片起个名字吧~">
-                        <div class="error-message" id="title-error">图片名称已存在，请使用其他名称</div>
+                        <div class="error-message" id="title-error">图片名称已存在,请使用其他名称</div>
                         <div class="upload-error" id="upload-error"></div>
                     </div>
                     <div class="edit-form-group">
@@ -2216,7 +2216,7 @@ async function handleStaticAssets(request, env) {
     const url = new URL(request.url);
     const pathname = url.pathname;
     
-    // 如果是图片资源，从R2获取
+    // 如果是图片资源,从R2获取
     if (pathname.startsWith('/images/')) {
         const key = pathname.substring(8); // 移除 /images/ 前缀
         try {
@@ -2425,9 +2425,9 @@ async function handleUpload(request, env) {
         
         const albumData = {
             id: parseInt(albumId),
-            title: metadata.title || '未命名'，
-            desc: metadata.desc || ''，
-            category: metadata.category || 'candid'，
+            title: metadata.title || '未命名',
+            desc: metadata.desc || '',
+            category: metadata.category || 'candid',
             date: metadata.date || new Date().toISOString().split('T')[0],
             img: imageUrl,
             likes: 0,
@@ -2435,14 +2435,14 @@ async function handleUpload(request, env) {
             comments: []
         };
         
-        console.log('Saving album data to KV:'， albumData);
+        console.log('Saving album data to KV:', albumData);
         
         try {
             await env.ALBUM_KV2.put(\`album_${albumId}\`, JSON.stringify(albumData));
             console.log('Album data saved to KV successfully');
         } catch (kvError) {
             console.error('KV save error:', kvError);
-            // 如果KV保存失败，删除已上传的文件
+            // 如果KV保存失败,删除已上传的文件
             try {
                 await env.IMAGE_BUCKET.delete(fileName);
             } catch (deleteError) {
