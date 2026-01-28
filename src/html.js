@@ -2480,6 +2480,10 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
                                 }, 300);
                             }
                         } else {
+                            // 密码错误时清除保存的密码，让用户可以重新输入
+                            if (result.error && result.error.includes('密码')) {
+                                window._batchUploadPassword = null;
+                            }
                             throw new Error(result.error || '上传失败');
                         }
                     } catch (error) {
