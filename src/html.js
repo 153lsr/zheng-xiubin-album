@@ -1664,9 +1664,9 @@ export function getHTML() {
         }
 
         .pagination-btn {
-            background: rgba(255, 192, 203, 0.3);
-            border: 2px solid rgba(255, 192, 203, 0.5);
-            color: #d46a9a;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #FFA500;
+            color: #333;
             padding: 8px 16px;
             border-radius: 20px;
             cursor: pointer;
@@ -1675,7 +1675,8 @@ export function getHTML() {
         }
 
         .pagination-btn:hover:not(:disabled) {
-            background: rgba(255, 192, 203, 0.5);
+            background: #FFA500;
+            color: white;
             transform: translateY(-2px);
         }
 
@@ -1690,9 +1691,9 @@ export function getHTML() {
         }
 
         .pagination-number {
-            background: rgba(255, 192, 203, 0.2);
-            border: 1px solid rgba(255, 192, 203, 0.4);
-            color: #d46a9a;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #FFA500;
+            color: #333;
             width: 36px;
             height: 36px;
             border-radius: 50%;
@@ -1704,17 +1705,18 @@ export function getHTML() {
         }
 
         .pagination-number:hover {
-            background: rgba(255, 192, 203, 0.4);
+            background: #FFA500;
+            color: white;
         }
 
         .pagination-number.active {
-            background: #d46a9a;
+            background: #FFA500;
             color: white;
-            border-color: #d46a9a;
+            border-color: #FFA500;
         }
 
         .pagination-info {
-            color: #d46a9a;
+            color: #fff;
             font-size: 14px;
             margin-left: 10px;
         }
@@ -2709,7 +2711,7 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
             const span = document.createElement('span');
             span.className = 'pagination-ellipsis';
             span.textContent = '...';
-            span.style.color = '#d46a9a';
+            span.style.color = '#fff';
             span.style.padding = '0 5px';
             container.appendChild(span);
         }
