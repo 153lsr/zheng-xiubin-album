@@ -1652,6 +1652,72 @@ export function getHTML() {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* 分页样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 30px 0;
+            padding: 20px;
+        }
+
+        .pagination-btn {
+            background: rgba(255, 192, 203, 0.3);
+            border: 2px solid rgba(255, 192, 203, 0.5);
+            color: #d46a9a;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: rgba(255, 192, 203, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-numbers {
+            display: flex;
+            gap: 5px;
+        }
+
+        .pagination-number {
+            background: rgba(255, 192, 203, 0.2);
+            border: 1px solid rgba(255, 192, 203, 0.4);
+            color: #d46a9a;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-number:hover {
+            background: rgba(255, 192, 203, 0.4);
+        }
+
+        .pagination-number.active {
+            background: #d46a9a;
+            color: white;
+            border-color: #d46a9a;
+        }
+
+        .pagination-info {
+            color: #d46a9a;
+            font-size: 14px;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -1759,7 +1825,15 @@ export function getHTML() {
             <!-- 相册项目将在JavaScript中生成 -->
             <div class="loading"><i class="fas fa-spinner"></i> 正在加载相册数据...</div>
         </div>
-        
+
+        <!-- 分页按钮 -->
+        <div class="pagination" id="pagination" style="display:none;">
+            <button class="pagination-btn" id="prev-page" disabled>上一页</button>
+            <div class="pagination-numbers" id="pagination-numbers"></div>
+            <button class="pagination-btn" id="next-page">下一页</button>
+            <span class="pagination-info">第 <span id="current-page-num">1</span> 页 / 共 <span id="total-page-num">1</span> 页</span>
+        </div>
+
         <div class="lightbox">
             <span class="close-lightbox">&times;</span>
             <!-- 图片导航按钮 -->
@@ -2064,8 +2138,13 @@ export function getHTML() {
                     const msg = (json && json.error) ? json.error : ('删除失败（HTTP ' + resp.status + '）');
                     throw new Error(msg);
                 }
-                await loadAlbums();
-                applyFilters();
+                await loadAlbums(currentPage);
+                // 如果正在筛选，重新应用筛选
+                if (isFiltering) {
+                    applyFilters();
+                } else {
+                    renderAlbums();
+                }
                 alert('删除成功');
             } catch (err) {
                 alert('删除失败：' + String(err && err.message ? err.message : err));
@@ -2217,8 +2296,9 @@ export function getHTML() {
                 // 重置筛选，恢复分页加载
                 isFiltering = false;
                 currentPage = 1;
-                hasMore = true;
-                await loadAlbums(false);
+                await loadAlbums(1);
+                renderAlbums();
+                return;
             }
 
             const filtered = albums.filter(function(a) {
@@ -2231,6 +2311,10 @@ export function getHTML() {
                 if (month !== 'all' && m !== month) return false;
                 return true;
             });
+
+            // 筛选时隐藏分页
+            const pagination = document.getElementById('pagination');
+            if (pagination) pagination.style.display = 'none';
 
             renderAlbums(filtered);
         }
@@ -2468,10 +2552,9 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
 
                                 // 重置分页状态并重新加载
                                 currentPage = 1;
-                                hasMore = true;
                                 isFiltering = false;
-                                await loadAlbums(false);
-                                renderAlbums(albums, false);
+                                await loadAlbums(1);
+                                renderAlbums();
 
                                 // 显示成功提示
                                 const count = batchFiles.length;
@@ -2511,65 +2594,146 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
             // 渲染相册
             renderAlbums();
 
-            // 设置无限滚动
-            setupInfiniteScroll();
+            // 绑定分页按钮事件
+            bindPaginationEvents();
         });
 
         // 分页状态
         let currentPage = 1;
-        let hasMore = true;
+        let totalPages = 1;
+        let totalAlbums = 0;
         let isLoading = false;
         const PAGE_SIZE = 20;
 
         // 加载相册数据（支持分页）
-        async function loadAlbums(append = false) {
+        async function loadAlbums(page = 1) {
             if (isLoading) return;
             isLoading = true;
 
             try {
-                const response = await fetch('/api/albums?page=' + currentPage + '&limit=' + PAGE_SIZE);
+                const response = await fetch('/api/albums?page=' + page + '&limit=' + PAGE_SIZE);
                 if (response.ok) {
                     const data = await response.json();
-                    if (append) {
-                        albums = albums.concat(data.albums);
-                    } else {
-                        albums = data.albums;
-                    }
-                    hasMore = data.hasMore;
+                    albums = data.albums;
+                    totalAlbums = data.total || 0;
+                    totalPages = Math.ceil(totalAlbums / PAGE_SIZE) || 1;
+                    currentPage = page;
+
+                    // 显示分页按钮
+                    renderPagination();
                 } else {
                     console.error('加载相册失败:', response.status);
-                    albums = append ? albums : [];
+                    albums = [];
+                    totalAlbums = 0;
+                    totalPages = 1;
                 }
             } catch (error) {
                 console.error('加载相册失败:', error);
-                albums = append ? albums : [];
+                albums = [];
+                totalAlbums = 0;
+                totalPages = 1;
             } finally {
                 isLoading = false;
             }
         }
 
-        // 加载更多
-        async function loadMore() {
-            if (!hasMore || isLoading || isFiltering) return;
-            currentPage++;
-            await loadAlbums(true);
-            renderAlbums(albums, true);
+        // 渲染分页按钮
+        function renderPagination() {
+            const pagination = document.getElementById('pagination');
+            const prevBtn = document.getElementById('prev-page');
+            const nextBtn = document.getElementById('next-page');
+            const numbersContainer = document.getElementById('pagination-numbers');
+            const currentPageNum = document.getElementById('current-page-num');
+            const totalPagesNum = document.getElementById('total-page-num');
+
+            if (!pagination) return;
+
+            // 如果没有数据或只有一页，隐藏分页
+            if (totalAlbums <= PAGE_SIZE) {
+                pagination.style.display = 'none';
+                return;
+            }
+
+            pagination.style.display = 'flex';
+
+            // 更新页码信息
+            currentPageNum.textContent = currentPage;
+            totalPagesNum.textContent = totalPages;
+
+            // 更新按钮状态
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
+
+            // 生成页码按钮
+            numbersContainer.innerHTML = '';
+            const maxButtons = 5; // 最多显示5个页码按钮
+
+            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+            if (endPage - startPage < maxButtons - 1) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+
+            // 第一页
+            if (startPage > 1) {
+                addPageNumber(numbersContainer, 1);
+                if (startPage > 2) {
+                    addEllipsis(numbersContainer);
+                }
+            }
+
+            // 中间页码
+            for (let i = startPage; i <= endPage; i++) {
+                addPageNumber(numbersContainer, i);
+            }
+
+            // 最后一页
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    addEllipsis(numbersContainer);
+                }
+                addPageNumber(numbersContainer, totalPages);
+            }
         }
 
-        // 设置无限滚动
-        function setupInfiniteScroll() {
-            window.addEventListener('scroll', function() {
-                if (isLoading || !hasMore || isFiltering) return;
+        function addPageNumber(container, pageNum) {
+            const btn = document.createElement('button');
+            btn.className = 'pagination-number' + (pageNum === currentPage ? ' active' : '');
+            btn.textContent = pageNum;
+            btn.addEventListener('click', () => goToPage(pageNum));
+            container.appendChild(btn);
+        }
 
-                const scrollTop = window.scrollY || document.documentElement.scrollTop;
-                const windowHeight = window.innerHeight;
-                const docHeight = document.documentElement.scrollHeight;
+        function addEllipsis(container) {
+            const span = document.createElement('span');
+            span.className = 'pagination-ellipsis';
+            span.textContent = '...';
+            span.style.color = '#d46a9a';
+            span.style.padding = '0 5px';
+            container.appendChild(span);
+        }
 
-                // 距离底部 300px 时加载更多
-                if (scrollTop + windowHeight >= docHeight - 300) {
-                    loadMore();
-                }
-            });
+        // 跳转到指定页面
+        async function goToPage(page) {
+            if (page < 1 || page > totalPages || page === currentPage || isLoading) return;
+            await loadAlbums(page);
+            renderAlbums();
+            // 滚动到顶部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 绑定分页按钮事件
+        function bindPaginationEvents() {
+            const prevBtn = document.getElementById('prev-page');
+            const nextBtn = document.getElementById('next-page');
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => goToPage(currentPage - 1));
+            }
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => goToPage(currentPage + 1));
+            }
         }
 
         // 加载公告数据
