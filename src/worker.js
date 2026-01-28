@@ -2421,13 +2421,13 @@ async function handleUpload(request, env) {
         }
         
         const albumId = timestamp.toString();
-        const imageUrl = \`/images/${fileName}\`;
+        const imageUrl = `/images/${fileName}`;
         
         const albumData = {
             id: parseInt(albumId),
-            title: metadata.title || '未命名',
-            desc: metadata.desc || '',
-            category: metadata.category || 'candid',
+            title: metadata.title || '未命名'，
+            desc: metadata.desc || ''，
+            category: metadata.category || 'candid'，
             date: metadata.date || new Date().toISOString().split('T')[0],
             img: imageUrl,
             likes: 0,
@@ -2435,7 +2435,7 @@ async function handleUpload(request, env) {
             comments: []
         };
         
-        console.log('Saving album data to KV:', albumData);
+        console.log('Saving album data to KV:'， albumData);
         
         try {
             await env.ALBUM_KV2.put(\`album_${albumId}\`, JSON.stringify(albumData));
