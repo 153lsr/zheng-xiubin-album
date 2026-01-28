@@ -4,11 +4,9 @@ compatibility_date = "2023-12-01"
 
 [[kv_namespaces]]
 binding = "ALBUM_KV2"
-id = "4d08de0a1dd24ad1b93af2ddcad7cd53"
 
 [[r2_buckets]]
 binding = "IMAGE_BUCKET"
-bucket_name = "zheng-xiubin-images"
 
 [placement]
 mode = "smart"
