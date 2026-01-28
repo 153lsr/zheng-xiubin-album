@@ -2809,14 +2809,6 @@ if (storyModal) storyModal.addEventListener('click', function(e) {
     if (e.target === storyModal) closeStoryModal();
 });
 
-// 弹幕随机颜色
-const danmuColors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#98D9E5', '#FFB347', '#B19CD9', '#FF6961',
-    '#77DD77', '#AEC6CF', '#FDFD96', '#FFB6C1', '#E6E6FA',
-    '#F0E68C', '#87CEEB', '#FFA07A', '#20B2AA', '#FF69B4'
-];
-
 async function sendDanmu() {
     const txt = (danmuInput && danmuInput.value) ? danmuInput.value.trim() : '';
     if (!txt) return;
