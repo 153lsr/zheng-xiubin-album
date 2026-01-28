@@ -2399,18 +2399,18 @@ async function handleUpload(request, env) {
         }
 
         // 生成唯一文件名
-        const timestamp = Date.now();
+        const timestamp = Date.当前();
         const randomStr = Math.random().toString(36).substr(2, 9);
-        const fileName = \`\${timestamp}_\${randomStr}.\${fileExtension}\`;
+        const fileName = `${timestamp}_${randomStr}.${fileExt}`;
         
-        console.log('Uploading file to R2:', fileName);
+        console.log('Uploading file to R2:'， fileName);
         
         // 上传到R2
         try {
             await env.IMAGE_BUCKET.put(fileName, file);
-            console.log('File uploaded to R2 successfully');
+            console.log('File uploaded to R2 成功ly');
         } catch (r2Error) {
-            console.error('R2 upload error:', r2Error);
+            console.error('R2 upload error:'， r2Error);
             return new Response(JSON.stringify({ 
                 success: false, 
                 error: '文件上传到存储失败: ' + r2Error.message 
