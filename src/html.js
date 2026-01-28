@@ -2381,6 +2381,115 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
                     closeLightboxUI();
                 }
             });
+
+            // 改进的上传表单提交函数（支持批量上传）
+            if (editForm) {
+                editForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    if (!tempUploadFile) return;
+
+                    const title = editTitle.value.trim();
+
+                    // 检查名称是否已存在
+                    if (isTitleExists(title)) {
+                        titleError.style.display = 'block';
+                        return;
+                    }
+
+                    // 检查是否有上传权限（需要管理员密码）
+                    if (!window._batchUploadPassword) {
+                        window._batchUploadPassword = window._adminPassword || prompt('请输入上传密码：');
+                    }
+                    if (!window._batchUploadPassword) {
+                        alert('需要密码才能上传');
+                        return;
+                    }
+
+                    // 隐藏错误提示
+                    titleError.style.display = 'none';
+                    uploadError.style.display = 'none';
+
+                    // 获取年月
+                    const year = editYear.value;
+                    const month = editMonth.value;
+                    const day = new Date().getDate().toString().padStart(2, '0');
+                    const dateStr = year + '-' + month + '-' + day;
+
+                    // 准备上传数据
+                    const formData = new FormData();
+                    formData.append('file', tempUploadFile);
+                    formData.append('password', window._batchUploadPassword);
+                    formData.append('metadata', JSON.stringify({
+                        title: title || "未命名图片",
+                        desc: editDesc.value || "",
+                        category: editCategory.value,
+                        date: dateStr
+                    }));
+
+                    try {
+                        // 显示上传进度
+                        progressBar.style.width = "30%";
+
+                        const response = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        progressBar.style.width = "70%";
+
+                        // 尝试解析JSON
+                        let result;
+                        try {
+                            result = await response.json();
+                        } catch (jsonError) {
+                            const textResponse = await response.text();
+                            console.error('非JSON响应:', textResponse);
+                            throw new Error('服务器返回了无效的响应格式');
+                        }
+
+                        if (result.success) {
+                            progressBar.style.width = "100%";
+
+                            // 添加到相册数组开头
+                            albums.unshift(result.data);
+
+                            // 检查是否还有更多文件要上传
+                            currentBatchIndex++;
+                            if (currentBatchIndex < batchFiles.length) {
+                                // 继续下一张
+                                setTimeout(() => {
+                                    showCurrentFile();
+                                }, 300);
+                            } else {
+                                // 全部上传完成
+                                window._batchUploadPassword = null;
+                                closeEditModal();
+
+                                // 重置分页状态并重新加载
+                                currentPage = 1;
+                                hasMore = true;
+                                isFiltering = false;
+                                await loadAlbums(false);
+                                renderAlbums(albums, false);
+
+                                // 显示成功提示
+                                const count = batchFiles.length;
+                                setTimeout(() => {
+                                    alert(count > 1 ? '成功上传 ' + count + ' 张图片！' : '图片上传成功！');
+                                }, 300);
+                            }
+                        } else {
+                            throw new Error(result.error || '上传失败');
+                        }
+                    } catch (error) {
+                        console.error('上传失败:', error);
+                        uploadError.textContent = '上传失败：' + error.message;
+                        uploadError.style.display = 'block';
+                        progressBar.style.width = "0%";
+                    }
+                });
+            }
         }
 
 
@@ -2670,6 +2779,27 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
             // 清空弹幕容器
             danmuContainer.innerHTML = '';
 
+            // 加载已有评论作为弹幕显示
+            if (album.comments && album.comments.length > 0) {
+                album.comments.forEach(function(comment, index) {
+                    setTimeout(function() {
+                        if (!danmuContainer) return;
+                        const item = document.createElement('div');
+                        item.className = 'danmu-item';
+                        item.textContent = comment.text || '';
+                        const randomColor = danmuColors[Math.floor(Math.random() * danmuColors.length)];
+                        item.style.color = randomColor;
+                        item.style.top = (5 + Math.floor(Math.random() * 70)) + '%';
+                        const duration = 6 + Math.random() * 4;
+                        item.style.animationDuration = duration + 's';
+                        danmuContainer.appendChild(item);
+                        item.addEventListener('animationend', function() {
+                            if (item && item.parentNode) item.parentNode.removeChild(item);
+                        });
+                    }, index * 800); // 每条弹幕间隔800ms依次出现
+                });
+            }
+
             // 更新点赞信息
             updateLikeInfo(album);
 
@@ -2870,113 +3000,6 @@ function isTitleExists(title) {
     const t = String(title).trim();
     return albums.some(function(a) { return a && a.title && String(a.title).trim() === t; });
 }
-
-        // 改进的上传表单提交函数（支持批量上传）
-        editForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            if (!tempUploadFile) return;
-
-            const title = editTitle.value.trim();
-
-            // 检查名称是否已存在
-            if (isTitleExists(title)) {
-                titleError.style.display = 'block';
-                return;
-            }
-
-            // 检查是否有上传权限（需要管理员密码）
-            if (!window._batchUploadPassword) {
-                window._batchUploadPassword = window._adminPassword || prompt('请输入上传密码：');
-            }
-            if (!window._batchUploadPassword) {
-                alert('需要密码才能上传');
-                return;
-            }
-
-            // 隐藏错误提示
-            titleError.style.display = 'none';
-            uploadError.style.display = 'none';
-
-            // 获取年月
-            const year = editYear.value;
-            const month = editMonth.value;
-            const day = new Date().getDate().toString().padStart(2, '0');
-            const dateStr = year + '-' + month + '-' + day;
-
-            // 准备上传数据
-            const formData = new FormData();
-            formData.append('file', tempUploadFile);
-            formData.append('password', window._batchUploadPassword);
-            formData.append('metadata', JSON.stringify({
-                title: title || "未命名图片",
-                desc: editDesc.value || "",
-                category: editCategory.value,
-                date: dateStr
-            }));
-
-            try {
-                // 显示上传进度
-                progressBar.style.width = "30%";
-
-                const response = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                progressBar.style.width = "70%";
-
-                // 尝试解析JSON
-                let result;
-                try {
-                    result = await response.json();
-                } catch (jsonError) {
-                    const textResponse = await response.text();
-                    console.error('非JSON响应:', textResponse);
-                    throw new Error('服务器返回了无效的响应格式');
-                }
-
-                if (result.success) {
-                    progressBar.style.width = "100%";
-
-                    // 添加到相册数组开头
-                    albums.unshift(result.data);
-
-                    // 检查是否还有更多文件要上传
-                    currentBatchIndex++;
-                    if (currentBatchIndex < batchFiles.length) {
-                        // 继续下一张
-                        setTimeout(() => {
-                            showCurrentFile();
-                        }, 300);
-                    } else {
-                        // 全部上传完成
-                        window._batchUploadPassword = null;
-                        closeEditModal();
-
-                        // 重置分页状态并重新加载
-                        currentPage = 1;
-                        hasMore = true;
-                        isFiltering = false;
-                        await loadAlbums(false);
-                        renderAlbums(albums, false);
-
-                        // 显示成功提示
-                        const count = batchFiles.length;
-                        setTimeout(() => {
-                            alert(count > 1 ? '成功上传 ' + count + ' 张图片！' : '图片上传成功！');
-                        }, 300);
-                    }
-                } else {
-                    throw new Error(result.error || '上传失败');
-                }
-            } catch (error) {
-                console.error('上传失败:', error);
-                uploadError.textContent = '上传失败：' + error.message;
-                uploadError.style.display = 'block';
-                progressBar.style.width = "0%";
-            }
-        });
 
         // ... 其他函数保持不变 ...
     </script>
