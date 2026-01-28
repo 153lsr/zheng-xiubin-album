@@ -71,7 +71,16 @@ export async function handleUpload(request, env) {
         const password = formData.get('password');
 
         // 验证上传密码
-        const uploadPassword = env.ADMIN_PASSWORD || 'admin123';
+        const uploadPassword = env.ADMIN_PASSWORD;
+        if (!uploadPassword) {
+            return new Response(JSON.stringify({
+                success: false,
+                error: '服务器未配置管理员密码，请联系管理员'
+            }), {
+                status: 500,
+                headers: corsHeaders
+            });
+        }
         if (password !== uploadPassword) {
             return new Response(JSON.stringify({
                 success: false,
@@ -139,7 +148,7 @@ export async function handleUpload(request, env) {
         }
 
         const timestamp = Date.now();
-        const randomStr = Math.random().toString(36).substr(2, 9);
+        const randomStr = Math.random().toString(36).substring(2, 11);
         const fileName = `${timestamp}_${randomStr}.${fileExtension}`;
 
         try {
@@ -211,7 +220,16 @@ export async function handleDelete(request, env) {
         const data = await request.json();
         const { id, password } = data;
 
-        const adminPassword = env.ADMIN_PASSWORD || 'admin123';
+        const adminPassword = env.ADMIN_PASSWORD;
+        if (!adminPassword) {
+            return new Response(JSON.stringify({
+                success: false,
+                error: '服务器未配置管理员密码，请联系管理员'
+            }), {
+                status: 500,
+                headers: corsHeaders
+            });
+        }
         if (password !== adminPassword) {
             return new Response(JSON.stringify({
                 success: false,
@@ -380,9 +398,21 @@ export async function handleComment(request, env) {
 
         const album = JSON.parse(albumData);
         album.comments = album.comments || [];
+
+        // HTML 转义函数，防止 XSS 攻击
+        const escapeHtml = (text) => {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+
         album.comments.push({
-            author: (comment.author || '匿名用户'),
-            text: comment.text,
+            author: escapeHtml(comment.author || '匿名用户'),
+            text: escapeHtml(comment.text),
             time: comment.time || new Date().toLocaleString('zh-CN')
         });
 
@@ -413,7 +443,16 @@ export async function handleUpdateStory(request, env) {
         const { id, desc, password } = data;
 
         // 验证管理员密码
-        const adminPassword = env.ADMIN_PASSWORD || 'admin123';
+        const adminPassword = env.ADMIN_PASSWORD;
+        if (!adminPassword) {
+            return new Response(JSON.stringify({
+                success: false,
+                error: '服务器未配置管理员密码，请联系管理员'
+            }), {
+                status: 500,
+                headers: corsHeaders
+            });
+        }
         if (password !== adminPassword) {
             return new Response(JSON.stringify({
                 success: false,
@@ -481,7 +520,16 @@ export async function handleAnnouncement(request, env) {
         } else {
             const data = await request.json();
 
-            const announcementPassword = env.ANNOUNCEMENT_PASSWORD || '72703';
+            const announcementPassword = env.ANNOUNCEMENT_PASSWORD;
+            if (!announcementPassword) {
+                return new Response(JSON.stringify({
+                    success: false,
+                    error: '服务器未配置公告密码，请联系管理员'
+                }), {
+                    status: 500,
+                    headers: corsHeaders
+                });
+            }
             if (data.password !== announcementPassword) {
                 return new Response(JSON.stringify({
                     success: false,

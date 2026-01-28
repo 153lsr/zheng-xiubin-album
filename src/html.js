@@ -2269,8 +2269,12 @@ export function getHTML() {
 
             // 编辑弹窗：取消、点击遮罩
             editCancel.addEventListener('click', closeEditModal);
-            editModal.addEventListener('click', function(e) { if (e.target === editModal) closeEditModal();
-                    closeLightboxUI(); });
+            editModal.addEventListener('click', function(e) {
+                if (e.target === editModal) {
+                    closeEditModal();
+                    closeLightboxUI();
+                }
+            });
 
             // 密码弹窗：取消/确认
             passwordCancel.addEventListener('click', hidePasswordModal);
