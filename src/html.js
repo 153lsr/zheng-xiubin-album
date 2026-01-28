@@ -2477,12 +2477,23 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
         // 更新登录显示
         function updateLoginDisplay() {
             loginSection.innerHTML = '';
-
+            
             if (isAdmin) {
-                loginSection.innerHTML = '<div class="user-info" title="管理员已登录"><i class="fas fa-user-shield"></i></div><button class="logout-btn" id="logout-btn" title="退出管理员"><i class="fas fa-sign-out-alt"></i></button>';
+                loginSection.innerHTML = \`
+                    <div class="user-info" title="管理员已登录">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <button class="logout-btn" id="logout-btn" title="退出管理员">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                \`;
                 document.getElementById('logout-btn').addEventListener('click', logout);
             } else {
-                loginSection.innerHTML = '<button class="login-btn" id="login-btn" title="管理员登录"><i class="fas fa-user-lock"></i></button>';
+                loginSection.innerHTML = \`
+                    <button class="login-btn" id="login-btn" title="管理员登录">
+                        <i class="fas fa-user-lock"></i>
+                    </button>
+                \`;
                 document.getElementById('login-btn').addEventListener('click', showLoginModal);
             }
         }
