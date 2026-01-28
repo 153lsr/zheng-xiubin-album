@@ -2293,11 +2293,11 @@ async function handleAPI(request, env, pathname) {
 // 获取所有相册
 async function handleGetAlbums(env) {
     try {
-        const keys = await env.ALBUM_KV.list({ prefix: 'album_' });
+        const keys = await env.ALBUM_KV2.list({ prefix: 'album_' });
         const albums = [];
         
         for (const key of keys.keys) {
-            const value = await env.ALBUM_KV.get(key.name);
+            const value = await env.ALBUM_KV2.get(key.name);
             if (value) {
                 albums.push(JSON.parse(value));
             }
@@ -2374,10 +2374,10 @@ async function handleUpload(request, env) {
         }
 
         // 获取文件扩展名
-        const fileExtension = file.name.split('.').pop().toLowerCase();
+        const fileExtensionension = file.name.split('.').pop().toLowerCase();
         const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         
-        if (!validExtensions.includes(fileExtension)) {
+        if (!validExtensions.includes(fileExtensionension)) {
             return new Response(JSON.stringify({ 
                 success: false, 
                 error: '不支持的文件格式。请上传 JPG, PNG, GIF, 或 WebP 格式的图片' 
@@ -2399,18 +2399,18 @@ async function handleUpload(request, env) {
         }
 
         // 生成唯一文件名
-        const timestamp = Date.当前();
+        const timestamp = Date.now();
         const randomStr = Math.random().toString(36).substr(2, 9);
-        const fileName = `${timestamp}_${randomStr}.${fileExt}`;
+        const fileName = `${timestamp}_${randomStr}.${fileExtension}`;
         
-        console.log('Uploading file to R2:'， fileName);
+        console.log('Uploading file to R2:', fileName);
         
         // 上传到R2
         try {
             await env.IMAGE_BUCKET.put(fileName, file);
             console.log('File uploaded to R2 成功ly');
         } catch (r2Error) {
-            console.error('R2 upload error:'， r2Error);
+            console.error('R2 upload error:', r2Error);
             return new Response(JSON.stringify({ 
                 success: false, 
                 error: '文件上传到存储失败: ' + r2Error.message 
@@ -2438,7 +2438,7 @@ async function handleUpload(request, env) {
         console.log('Saving album data to KV:', albumData);
         
         try {
-            await env.ALBUM_KV.put(\`album_\${albumId}\`, JSON.stringify(albumData));
+            await env.ALBUM_KV2.put(\`album_\${albumId}\`, JSON.stringify(albumData));
             console.log('Album data saved to KV successfully');
         } catch (kvError) {
             console.error('KV save error:', kvError);
@@ -2493,7 +2493,7 @@ async function handleDelete(request, env) {
         }
 
         // 从KV删除记录
-        await env.ALBUM_KV.delete(\`album_\${id}\`);
+        await env.ALBUM_KV2.delete(\`album_\${id}\`);
         
         return new Response(JSON.stringify({ 
             success: true, 
@@ -2529,7 +2529,7 @@ async function handleLike(request, env) {
         }
 
         const albumKey = \`album_\${albumId}\`;
-        const albumData = await env.ALBUM_KV.get(albumKey);
+        const albumData = await env.ALBUM_KV2.get(albumKey);
         
         if (!albumData) {
             return new Response(JSON.stringify({ 
@@ -2545,7 +2545,7 @@ async function handleLike(request, env) {
         album.liked = liked;
         album.likes = likes;
         
-        await env.ALBUM_KV.put(albumKey, JSON.stringify(album));
+        await env.ALBUM_KV2.put(albumKey, JSON.stringify(album));
         
         return new Response(JSON.stringify({ 
             success: true 
@@ -2580,7 +2580,7 @@ async function handleComment(request, env) {
         }
 
         const albumKey = \`album_\${albumId}\`;
-        const albumData = await env.ALBUM_KV.get(albumKey);
+        const albumData = await env.ALBUM_KV2.get(albumKey);
         
         if (!albumData) {
             return new Response(JSON.stringify({ 
@@ -2600,7 +2600,7 @@ async function handleComment(request, env) {
             time: comment.time || new Date().toLocaleString('zh-CN')
         });
         
-        await env.ALBUM_KV.put(albumKey, JSON.stringify(album));
+        await env.ALBUM_KV2.put(albumKey, JSON.stringify(album));
         
         return new Response(JSON.stringify({ 
             success: true 
@@ -2622,13 +2622,13 @@ async function handleComment(request, env) {
 async function handleAnnouncement(request, env) {
     try {
         if (request.method === 'GET') {
-            const content = await env.ALBUM_KV.get('announcement') || '欢迎来到郑秀彬专属相册集！这里珍藏着秀彬的每一个精彩瞬间。请尽情欣赏并留下您的宝贵评论。';
+            const content = await env.ALBUM_KV2.get('announcement') || '欢迎来到郑秀彬专属相册集！这里珍藏着秀彬的每一个精彩瞬间。请尽情欣赏并留下您的宝贵评论。';
             return new Response(JSON.stringify({ content }), {
                 headers: CORS_HEADERS
             });
         } else {
             const data = await request.json();
-            await env.ALBUM_KV.put('announcement', data.content);
+            await env.ALBUM_KV2.put('announcement', data.content);
             return new Response(JSON.stringify({ success: true }), {
                 headers: CORS_HEADERS
             });
