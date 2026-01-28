@@ -2425,12 +2425,24 @@ export function getHTML() {
 
             if (editStoryBtn) editStoryBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
+                e.preventDefault();
                 openStoryModal();
             });
-            if (storySaveBtn) storySaveBtn.addEventListener('click', saveStory);
-            if (storyCancelBtn) storyCancelBtn.addEventListener('click', closeStoryModal);
+            if (storySaveBtn) storySaveBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                saveStory();
+            });
+            if (storyCancelBtn) storyCancelBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                closeStoryModal();
+            });
             if (storyModal) storyModal.addEventListener('click', function(e) {
                 if (e.target === storyModal) closeStoryModal();
+            });
+
+            // 图片卡片：点击翻面（看"故事"）
+            if (imageCard) imageCard.addEventListener('click', function() {
+                imageCard.classList.toggle('flipped');
             });
 
 // Lightbox：关闭/上一张/下一张/点赞/弹幕
@@ -2457,11 +2469,6 @@ if (danmuInput) danmuInput.addEventListener('keydown', function(e) {
         e.preventDefault();
         sendDanmu();
     }
-});
-
-// 图片卡片：点击翻面（看“故事”）
-if (imageCard) imageCard.addEventListener('click', function() {
-    imageCard.classList.toggle('flipped');
 });
 
 // 登录弹窗：确认/取消/回车/遮罩
