@@ -4,9 +4,11 @@ compatibility_date = "2023-12-01"
 
 [[kv_namespaces]]
 binding = "ALBUM_KV2"
+id = "8b0dc093e80d4d3c835efc27b67aeb10"
 
 [[r2_buckets]]
 binding = "IMAGE_BUCKET"
+bucket_name = "album" 
 
 [placement]
 mode = "smart"
