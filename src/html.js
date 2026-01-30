@@ -501,7 +501,7 @@ export function getHTML() {
             width: 100%;
             height: 100%;
             position: relative;
-            padding-bottom: 100px; /* 为弹幕输入框留出空间 */
+            padding: 20px; /* 适当的边距 */
         }
 
         .lightbox-content {
