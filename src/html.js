@@ -700,69 +700,31 @@ export function getHTML() {
             font-size: 1.1rem;
         }
 
-        /* 隐藏/显示弹幕按钮 - HelloKitty 形状 */
+        /* 隐藏/显示弹幕按钮 - 黄色圆形 */
         .toggle-danmu-btn {
             position: fixed;
             bottom: 90px;
             right: 20px;
-            background: linear-gradient(135deg, #FFB6C1, #FF69B4);
+            background: linear-gradient(45deg, #FFD700, #FFA500);
             color: white;
             border: none;
-            width: 60px;
-            height: 55px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
             cursor: pointer;
             font-weight: bold;
-            box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+            box-shadow: 0 3px 10px rgba(255, 215, 0, 0.4);
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             z-index: 300;
-            border-radius: 50% 50% 45% 45%;
-            position: relative;
-        }
-
-        /* HelloKitty 左耳朵 */
-        .toggle-danmu-btn::before {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(135deg, #FFB6C1, #FF69B4);
-            border-radius: 50%;
-            top: -8px;
-            left: 8px;
-            box-shadow: 0 2px 8px rgba(255, 105, 180, 0.3);
-        }
-
-        /* HelloKitty 右耳朵 */
-        .toggle-danmu-btn::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(135deg, #FFB6C1, #FF69B4);
-            border-radius: 50%;
-            top: -8px;
-            right: 8px;
-            box-shadow: 0 2px 8px rgba(255, 105, 180, 0.3);
         }
 
         .toggle-danmu-btn:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 6px 20px rgba(255, 105, 180, 0.6);
-        }
-
-        /* HelloKitty 蝴蝶结装饰 */
-        .toggle-danmu-btn .bow {
-            position: absolute;
-            top: -5px;
-            left: 5px;
-            font-size: 0.8rem;
-            color: #FF1493;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-            z-index: 1;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
         }
 
         /* 图片翻转卡片样式 */
@@ -1914,9 +1876,8 @@ export function getHTML() {
                 <button class="danmu-submit" id="danmu-submit">发送</button>
             </div>
 
-            <!-- 隐藏/显示弹幕按钮 - HelloKitty 形状 -->
+            <!-- 隐藏/显示弹幕按钮 -->
             <button class="toggle-danmu-btn" id="toggle-danmu-btn" title="隐藏弹幕">
-                <span class="bow">🎀</span>
                 <i class="fas fa-eye-slash"></i>
             </button>
         </div>
@@ -3065,7 +3026,6 @@ function updateLikeInfo(album) {
 function updateToggleDanmuButton() {
     if (!toggleDanmuBtn) return;
     const icon = toggleDanmuBtn.querySelector('i');
-    const bow = toggleDanmuBtn.querySelector('.bow');
     if (icon) {
         icon.className = danmuVisible ? 'fas fa-eye-slash' : 'fas fa-eye';
     }
