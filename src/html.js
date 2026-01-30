@@ -618,9 +618,8 @@ export function getHTML() {
         /* 弹幕输入区域 */
         .danmu-input-container {
             position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 90px;
+            right: 20px;
             background: rgba(255, 255, 255, 0.9);
             border-radius: 30px;
             padding: 8px;
@@ -646,7 +645,7 @@ export function getHTML() {
         }
 
         .danmu-input-container.collapsed:hover {
-            transform: translateX(-50%) translateY(-2px);
+            transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
         }
 
@@ -739,7 +738,7 @@ export function getHTML() {
         /* 隐藏/显示弹幕按钮 - 黄色圆形 */
         .toggle-danmu-btn {
             position: fixed;
-            bottom: 90px;
+            bottom: 20px;
             right: 20px;
             background: linear-gradient(45deg, #FFD700, #FFA500);
             color: white;
@@ -1630,9 +1629,14 @@ export function getHTML() {
             .danmu-input-container {
                 width: 95%;
                 padding: 6px;
-                bottom: 10px;
+                bottom: 80px;
             }
-            
+
+            .danmu-input-container.collapsed {
+                width: 50px;
+                height: 50px;
+            }
+
             .danmu-input {
                 padding: 10px 12px;
                 font-size: 0.9rem;
