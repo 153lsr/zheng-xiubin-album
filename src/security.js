@@ -29,8 +29,8 @@ export function getSecurityHeaders() {
         // 权限策略
         'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 
-        // HSTS - 强制 HTTPS（仅在生产环境启用）
-        // 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'
+        // HSTS - 强制 HTTPS
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'
     };
 }
 
