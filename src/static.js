@@ -9,8 +9,8 @@ export async function handleStaticAssets(request, env) {
     if (pathname.startsWith('/images/')) {
         const key = pathname.substring(8);
 
-        // 验证路径不为空
-        if (!key || key.length === 0) {
+        // 验证路径安全性（防止路径遍历攻击）
+        if (!key || key.length === 0 || key.includes('..') || key.includes('/') || key.includes('\\')) {
             return new Response('Invalid image path', { status: 400 });
         }
 

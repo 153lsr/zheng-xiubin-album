@@ -200,9 +200,10 @@ export async function handleUpload(request, env) {
         try {
             metadata = JSON.parse(metadataStr);
         } catch (parseError) {
+            console.error('Metadata parse error:', parseError);
             return new Response(JSON.stringify({
                 success: false,
-                error: '元数据格式错误: ' + parseError.message
+                error: '元数据格式错误，请检查数据格式'
             }), {
                 status: 400,
                 headers: corsHeaders
@@ -210,10 +211,10 @@ export async function handleUpload(request, env) {
         }
 
         // 验证并提取文件扩展名
-        const fileName = file.name || '';
-        const lastDotIndex = fileName.lastIndexOf('.');
+        const originalFileName = file.name || '';
+        const lastDotIndex = originalFileName.lastIndexOf('.');
 
-        if (lastDotIndex === -1 || lastDotIndex === fileName.length - 1) {
+        if (lastDotIndex === -1 || lastDotIndex === originalFileName.length - 1) {
             return new Response(JSON.stringify({
                 success: false,
                 error: '文件名无效或缺少扩展名'
@@ -223,13 +224,13 @@ export async function handleUpload(request, env) {
             });
         }
 
-        const fileExtension = fileName.substring(lastDotIndex + 1).toLowerCase();
+        const fileExtension = originalFileName.substring(lastDotIndex + 1).toLowerCase();
 
-        // 验证扩展名只包含字母数字
-        if (!/^[a-z0-9]+$/.test(fileExtension)) {
+        // 验证扩展名只包含字母数字，且长度合理
+        if (!/^[a-z0-9]{1,10}$/.test(fileExtension)) {
             return new Response(JSON.stringify({
                 success: false,
-                error: '文件扩展名包含非法字符'
+                error: '文件扩展名无效'
             }), {
                 status: 400,
                 headers: corsHeaders
@@ -271,9 +272,10 @@ export async function handleUpload(request, env) {
         try {
             await env.IMAGE_BUCKET.put(fileName, file);
         } catch (r2Error) {
+            console.error('R2 upload error:', r2Error);
             return new Response(JSON.stringify({
                 success: false,
-                error: '文件上传到存储失败: ' + r2Error.message
+                error: '文件上传失败，请稍后重试'
             }), {
                 status: 500,
                 headers: corsHeaders
@@ -309,6 +311,7 @@ export async function handleUpload(request, env) {
         try {
             await env.ALBUM_KV2.put(`album_${albumId}`, JSON.stringify(albumData));
         } catch (kvError) {
+            console.error('KV save error:', kvError);
             try {
                 await env.IMAGE_BUCKET.delete(fileName);
             } catch (deleteError) {
@@ -317,7 +320,7 @@ export async function handleUpload(request, env) {
 
             return new Response(JSON.stringify({
                 success: false,
-                error: '相册数据保存失败: ' + kvError.message
+                error: '数据保存失败，请稍后重试'
             }), {
                 status: 500,
                 headers: corsHeaders
@@ -664,7 +667,9 @@ export async function handleUpdateStory(request, env) {
             });
         }
 
-        album.desc = desc || '';
+        // 限制描述长度
+        const MAX_DESC_LENGTH = 1000;
+        album.desc = (desc || '').substring(0, MAX_DESC_LENGTH);
 
         await env.ALBUM_KV2.put(albumKey, JSON.stringify(album));
 
