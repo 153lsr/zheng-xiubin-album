@@ -501,6 +501,7 @@ export function getHTML() {
             width: 100%;
             height: 100%;
             position: relative;
+            padding-bottom: 100px; /* 为弹幕输入框留出空间 */
         }
 
         .lightbox-content {
@@ -630,6 +631,41 @@ export function getHTML() {
             z-index: 300;
             width: 95%;
             max-width: 600px;
+            transition: all 0.3s ease;
+        }
+
+        /* 弹幕输入区域收起状态 */
+        .danmu-input-container.collapsed {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            padding: 0;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            cursor: pointer;
+            justify-content: center;
+        }
+
+        .danmu-input-container.collapsed:hover {
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
+        }
+
+        /* 收起状态下隐藏输入框和按钮 */
+        .danmu-input-container.collapsed .danmu-input,
+        .danmu-input-container.collapsed .danmu-submit,
+        .danmu-input-container.collapsed .like-btn-container {
+            display: none;
+        }
+
+        /* 收起状态下显示的图标 */
+        .danmu-toggle-icon {
+            display: none;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .danmu-input-container.collapsed .danmu-toggle-icon {
+            display: block;
         }
 
         .danmu-input {
@@ -1542,7 +1578,7 @@ export function getHTML() {
             .gallery {
                 grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             }
-            
+
             .profile-section {
                 flex-direction: column;
                 text-align: center;
@@ -1865,7 +1901,8 @@ export function getHTML() {
             <div class="danmu-container" id="danmu-container"></div>
 
             <!-- 弹幕输入区域 -->
-            <div class="danmu-input-container">
+            <div class="danmu-input-container collapsed" id="danmu-input-container-toggle">
+                <i class="fas fa-comment danmu-toggle-icon"></i>
                 <input type="text" class="danmu-input" id="danmu-input" placeholder="发送弹幕..." maxlength="50">
                 <div class="like-btn-container">
                     <button class="like-btn" id="like-btn">
@@ -2041,6 +2078,7 @@ export function getHTML() {
         const danmuContainer = document.getElementById('danmu-container');
         const danmuInput = document.getElementById('danmu-input');
         const danmuSubmit = document.getElementById('danmu-submit');
+        const danmuInputContainerToggle = document.getElementById('danmu-input-container-toggle');
         const likeBtn = document.getElementById('like-btn');
         const likeCount = document.getElementById('like-count');
         const toggleDanmuBtn = document.getElementById('toggle-danmu-btn');
@@ -2463,6 +2501,32 @@ if (nextBtn) nextBtn.addEventListener('click', function() {
 
 if (likeBtn) likeBtn.addEventListener('click', handleLikeClick);
 if (toggleDanmuBtn) toggleDanmuBtn.addEventListener('click', toggleDanmu);
+
+// 弹幕输入框展开/收起功能
+if (danmuInputContainerToggle) {
+    danmuInputContainerToggle.addEventListener('click', function(e) {
+        // 如果是收起状态，点击展开
+        if (danmuInputContainerToggle.classList.contains('collapsed')) {
+            danmuInputContainerToggle.classList.remove('collapsed');
+            // 展开后自动聚焦输入框
+            setTimeout(() => {
+                if (danmuInput) danmuInput.focus();
+            }, 300);
+        }
+    });
+
+    // 点击输入框外部时收起
+    document.addEventListener('click', function(e) {
+        if (!danmuInputContainerToggle.contains(e.target) &&
+            !danmuInputContainerToggle.classList.contains('collapsed')) {
+            // 如果输入框为空，则收起
+            if (!danmuInput || !danmuInput.value.trim()) {
+                danmuInputContainerToggle.classList.add('collapsed');
+            }
+        }
+    });
+}
+
 if (danmuSubmit) danmuSubmit.addEventListener('click', sendDanmu);
 if (danmuInput) danmuInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
@@ -2998,10 +3062,6 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
             // 更新点赞信息
             updateLikeInfo(album);
 
-            // 显示弹幕（如果之前被隐藏）
-            danmuVisible = true;
-            updateToggleDanmuButton();
-
             // 设置当前索引
             currentIndex = albums.findIndex(a => a.id === album.id);
         }
@@ -3131,6 +3191,11 @@ async function sendDanmu() {
     if (!txt) return;
 
     if (danmuInput) danmuInput.value = '';
+
+    // 发送后收起输入框
+    if (danmuInputContainerToggle) {
+        danmuInputContainerToggle.classList.add('collapsed');
+    }
 
     // 先本地展示一条弹幕
     if (danmuContainer) {
