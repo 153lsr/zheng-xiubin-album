@@ -20,7 +20,7 @@ mode = "smart"
 
 [vars]
 # 非敏感配置可以放这里
-MAX_FILE_SIZE = "10485760"
+MAX_FILE_SIZE = "8388608"  # 8MB = 8 * 1024 * 1024
 
 # 添加路由配置（如果需要自定义域名）
 # [[routes]]

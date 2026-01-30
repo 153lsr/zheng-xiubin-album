@@ -1,33 +1,102 @@
 import { getCorsHeaders } from './cors.js';
 
-// 获取相册（支持分页）
+// 安全的 JSON 解析辅助函数
+function safeJSONParse(str, defaultValue = null) {
+    try {
+        return JSON.parse(str);
+    } catch (e) {
+        console.error('JSON parse error:', e);
+        return defaultValue;
+    }
+}
+
+// 获取相册（支持分页）- 优化版本
+// 使用 KV cursor 分页，避免一次性加载所有数据
 export async function handleGetAlbums(request, env) {
     const corsHeaders = getCorsHeaders(request);
     try {
         const url = new URL(request.url);
-        const page = parseInt(url.searchParams.get('page')) || 1;
-        const limit = parseInt(url.searchParams.get('limit')) || 20;
+        const page = parseInt(url.searchParams.get('page'), 10) || 1;
+        let limit = parseInt(url.searchParams.get('limit'), 10) || 20;
 
-        const keys = await env.ALBUM_KV2.list({ prefix: 'album_' });
-        const albums = [];
+        // 限制 limit 参数范围（降低最大值）
+        if (limit < 1) limit = 20;
+        if (limit > 50) limit = 50;  // 降低到 50
 
-        for (const key of keys.keys) {
-            const value = await env.ALBUM_KV2.get(key.name);
-            if (value) {
-                albums.push(JSON.parse(value));
+        // 添加超时保护
+        const timeoutMs = 8000;  // 8秒超时
+        const startTime = Date.now();
+
+        // 使用 KV list 的 cursor 功能进行真正的分页
+        let allKeys = [];
+        let listResult = await env.ALBUM_KV2.list({
+            prefix: 'album_',
+            limit: 500  // 降低每次获取数量
+        });
+
+        allKeys = allKeys.concat(listResult.keys);
+
+        // 更严格的循环限制（最多 1500 个相册）
+        let loopCount = 0;
+        const MAX_LOOPS = 2;  // 总共最多 3 次（1 + 2）
+
+        while (!listResult.list_complete && loopCount < MAX_LOOPS) {
+            // 检查超时
+            if (Date.now() - startTime > timeoutMs) {
+                console.warn('handleGetAlbums: 接近超时，提前退出');
+                break;
             }
+
+            listResult = await env.ALBUM_KV2.list({
+                prefix: 'album_',
+                limit: 500,
+                cursor: listResult.cursor
+            });
+            allKeys = allKeys.concat(listResult.keys);
+            loopCount++;
         }
 
-        albums.sort((a, b) => new Date(b.date) - new Date(a.date));
+        // 从键名中提取 ID 和时间戳进行排序
+        const sortedKeys = allKeys
+            .map(key => ({
+                name: key.name,
+                timestamp: parseInt(key.name.replace('album_', ''), 10)
+            }))
+            .sort((a, b) => b.timestamp - a.timestamp);
 
-        const total = albums.length;
+        const total = sortedKeys.length;
         const start = (page - 1) * limit;
-        const end = start + limit;
-        const pagedAlbums = albums.slice(start, end);
+        const end = Math.min(start + limit, total);
         const hasMore = end < total;
 
+        // 分批并行查询，避免一次性发起太多请求
+        const pageKeys = sortedKeys.slice(start, end);
+        const BATCH_SIZE = 10;  // 每批最多 10 个
+        const albums = [];
+
+        for (let i = 0; i < pageKeys.length; i += BATCH_SIZE) {
+            // 检查超时
+            if (Date.now() - startTime > timeoutMs) {
+                console.warn('handleGetAlbums: 数据获取超时');
+                break;
+            }
+
+            const batch = pageKeys.slice(i, i + BATCH_SIZE);
+            const batchPromises = batch.map(keyInfo =>
+                env.ALBUM_KV2.get(keyInfo.name)
+            );
+            const batchValues = await Promise.all(batchPromises);
+
+            const batchAlbums = batchValues
+                .filter(value => value !== null)
+                .map(value => safeJSONParse(value))
+                .filter(album => album !== null);
+
+            albums.push(...batchAlbums);
+        }
+
         return new Response(JSON.stringify({
-            albums: pagedAlbums,
+            albums: albums,
             total: total,
             page: page,
             limit: limit,
@@ -52,6 +121,11 @@ export async function handleGetAlbums(request, env) {
 // 上传图片
 export async function handleUpload(request, env) {
     const corsHeaders = getCorsHeaders(request);
+
+    // 添加超时保护
+    const timeoutMs = 25000;  // 25秒超时（留 5 秒缓冲）
+    const startTime = Date.now();
+
     try {
         const contentType = request.headers.get('content-type') || '';
 
@@ -65,7 +139,18 @@ export async function handleUpload(request, env) {
             });
         }
 
+        // 检查超时
+        if (Date.now() - startTime > timeoutMs) {
+            throw new Error('请求处理超时');
+        }
+
         const formData = await request.formData();
+
+        // 再次检查超时
+        if (Date.now() - startTime > timeoutMs) {
+            throw new Error('FormData 解析超时');
+        }
+
         const file = formData.get('file');
         const metadataStr = formData.get('metadata');
         const password = formData.get('password');
@@ -124,7 +209,33 @@ export async function handleUpload(request, env) {
             });
         }
 
-        const fileExtension = file.name.split('.').pop().toLowerCase();
+        // 验证并提取文件扩展名
+        const fileName = file.name || '';
+        const lastDotIndex = fileName.lastIndexOf('.');
+
+        if (lastDotIndex === -1 || lastDotIndex === fileName.length - 1) {
+            return new Response(JSON.stringify({
+                success: false,
+                error: '文件名无效或缺少扩展名'
+            }), {
+                status: 400,
+                headers: corsHeaders
+            });
+        }
+
+        const fileExtension = fileName.substring(lastDotIndex + 1).toLowerCase();
+
+        // 验证扩展名只包含字母数字
+        if (!/^[a-z0-9]+$/.test(fileExtension)) {
+            return new Response(JSON.stringify({
+                success: false,
+                error: '文件扩展名包含非法字符'
+            }), {
+                status: 400,
+                headers: corsHeaders
+            });
+        }
+
         const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
         if (!validExtensions.includes(fileExtension)) {
@@ -137,14 +248,20 @@ export async function handleUpload(request, env) {
             });
         }
 
-        if (file.size > 10 * 1024 * 1024) {
+        // 文件大小限制（8MB 是性能和功能的平衡点）
+        if (file.size > 8 * 1024 * 1024) {  // 8MB
             return new Response(JSON.stringify({
                 success: false,
-                error: '文件太大。请上传小于10MB的图片'
+                error: '文件太大。请上传小于8MB的图片'
             }), {
                 status: 400,
                 headers: corsHeaders
             });
+        }
+
+        // 检查超时
+        if (Date.now() - startTime > timeoutMs) {
+            throw new Error('上传前检查超时');
         }
 
         const timestamp = Date.now();
@@ -161,6 +278,17 @@ export async function handleUpload(request, env) {
                 status: 500,
                 headers: corsHeaders
             });
+        }
+
+        // 检查超时
+        if (Date.now() - startTime > timeoutMs) {
+            // 尝试清理已上传的文件
+            try {
+                await env.IMAGE_BUCKET.delete(fileName);
+            } catch (e) {
+                console.error('清理文件失败:', e);
+            }
+            throw new Error('上传后处理超时');
         }
 
         const albumId = timestamp.toString();
@@ -252,13 +380,15 @@ export async function handleDelete(request, env) {
 
         const albumData = await env.ALBUM_KV2.get(`album_${id}`);
         if (albumData) {
-            const album = JSON.parse(albumData);
-            if (album.img && album.img.startsWith('/images/')) {
+            const album = safeJSONParse(albumData);
+            if (album && album.img && album.img.startsWith('/images/')) {
                 const fileName = album.img.substring(8);
-                try {
-                    await env.IMAGE_BUCKET.delete(fileName);
-                } catch (e) {
-                    console.error('Failed to delete R2 file:', e);
+                if (fileName && fileName.length > 0) {
+                    try {
+                        await env.IMAGE_BUCKET.delete(fileName);
+                    } catch (e) {
+                        console.error('Failed to delete R2 file:', e);
+                    }
                 }
             }
         }
@@ -327,7 +457,17 @@ export async function handleLike(request, env) {
             });
         }
 
-        const album = JSON.parse(albumData);
+        const album = safeJSONParse(albumData);
+        if (!album) {
+            return new Response(JSON.stringify({
+                success: false,
+                error: '相册数据损坏'
+            }), {
+                status: 500,
+                headers: corsHeaders
+            });
+        }
+
         album.likes = (album.likes || 0) + 1;
 
         await env.ALBUM_KV2.put(likeKey, '1', { expirationTtl: 86400 });
@@ -371,7 +511,7 @@ export async function handleComment(request, env) {
         const commentRateKey = `comment_rate_${clientIP}`;
 
         const rateData = await env.ALBUM_KV2.get(commentRateKey);
-        let commentCount = rateData ? parseInt(rateData) : 0;
+        let commentCount = rateData ? parseInt(rateData, 10) : 0;
 
         if (commentCount >= 5) {
             return new Response(JSON.stringify({
@@ -396,8 +536,25 @@ export async function handleComment(request, env) {
             });
         }
 
-        const album = JSON.parse(albumData);
+        const album = safeJSONParse(albumData);
+        if (!album) {
+            return new Response(JSON.stringify({
+                success: false,
+                error: '相册数据损坏'
+            }), {
+                status: 500,
+                headers: corsHeaders
+            });
+        }
+
         album.comments = album.comments || [];
+
+        // 限制评论数量，防止数组无限增长
+        const MAX_COMMENTS = 100;
+        if (album.comments.length >= MAX_COMMENTS) {
+            // 删除最旧的评论
+            album.comments.shift();
+        }
 
         // HTML 转义函数，防止 XSS 攻击
         const escapeHtml = (text) => {
@@ -410,9 +567,19 @@ export async function handleComment(request, env) {
                 .replace(/'/g, '&#039;');
         };
 
+        // 限制评论长度
+        const MAX_COMMENT_LENGTH = 500;
+        const MAX_AUTHOR_LENGTH = 50;
+        const commentText = comment.text || '';
+        const authorName = comment.author || '匿名用户';
+
+        const truncatedText = commentText.length > MAX_COMMENT_LENGTH
+            ? commentText.substring(0, MAX_COMMENT_LENGTH) + '...'
+            : commentText;
+
         album.comments.push({
-            author: escapeHtml(comment.author || '匿名用户'),
-            text: escapeHtml(comment.text),
+            author: escapeHtml(authorName).substring(0, MAX_AUTHOR_LENGTH),
+            text: escapeHtml(truncatedText),
             time: comment.time || new Date().toLocaleString('zh-CN')
         });
 
@@ -486,7 +653,17 @@ export async function handleUpdateStory(request, env) {
             });
         }
 
-        const album = JSON.parse(albumData);
+        const album = safeJSONParse(albumData);
+        if (!album) {
+            return new Response(JSON.stringify({
+                success: false,
+                error: '相册数据损坏'
+            }), {
+                status: 500,
+                headers: corsHeaders
+            });
+        }
+
         album.desc = desc || '';
 
         await env.ALBUM_KV2.put(albumKey, JSON.stringify(album));
@@ -563,7 +740,18 @@ export async function handleVerifyAdmin(request, env) {
         const data = await request.json();
         const { password } = data;
 
-        const adminPassword = env.ADMIN_PASSWORD || 'admin123';
+        // 安全修复：移除默认密码，强制要求配置环境变量
+        const adminPassword = env.ADMIN_PASSWORD;
+        if (!adminPassword) {
+            return new Response(JSON.stringify({
+                success: false,
+                error: '服务器未配置管理员密码，请联系管理员在 Cloudflare Dashboard 中设置 ADMIN_PASSWORD 环境变量'
+            }), {
+                status: 500,
+                headers: corsHeaders
+            });
+        }
+
         if (password === adminPassword) {
             return new Response(JSON.stringify({ success: true }), {
                 headers: corsHeaders

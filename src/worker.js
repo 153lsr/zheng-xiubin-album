@@ -1,4 +1,5 @@
 import { getCorsHeaders } from './cors.js';
+import { addSecurityHeaders } from './security.js';
 import {
     handleGetAlbums,
     handleUpload,
@@ -14,26 +15,38 @@ import { getHTML } from './html.js';
 
 export default {
     async fetch(request, env) {
-        const url = new URL(request.url);
-        const pathname = url.pathname;
+        try {
+            const url = new URL(request.url);
+            const pathname = url.pathname;
 
-        // API路由处理
-        if (pathname.startsWith('/api/')) {
-            return handleAPI(request, env, pathname);
-        }
+            // API路由处理
+            if (pathname.startsWith('/api/')) {
+                return handleAPI(request, env, pathname);
+            }
 
-        // 静态文件服务
-        if (pathname === '/' || pathname === '/index.html') {
-            return new Response(getHTML(), {
-                headers: {
+            // 静态文件服务
+            if (pathname === '/' || pathname === '/index.html') {
+                const headers = addSecurityHeaders({
                     'Content-Type': 'text/html; charset=utf-8',
-                    'Cache-Control': 'no-cache, no-store, must-revalidate'
+                    'Cache-Control': 'public, max-age=3600'  // 缓存 1 小时
+                });
+                return new Response(getHTML(), { headers });
+            }
+
+            // 其他静态资源
+            return await handleStaticAssets(request, env);
+        } catch (error) {
+            console.error('Worker fatal error:', error);
+            return new Response(JSON.stringify({
+                error: 'Internal Server Error',
+                message: 'An unexpected error occurred'
+            }), {
+                status: 500,
+                headers: {
+                    'Content-Type': 'application/json'
                 }
             });
         }
-
-        // 其他静态资源
-        return await handleStaticAssets(request, env);
     }
 };
 
