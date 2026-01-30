@@ -507,18 +507,22 @@ export function getHTML() {
         .lightbox-content {
             max-width: 90%;
             max-height: 80vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
             border-radius: 15px;
             box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
             cursor: zoom-in;
             transition: transform 0.3s ease;
             border: 5px solid #FFD700;
             z-index: 100;
+            display: block;
+            margin: auto;
         }
 
         .lightbox-content.zoomed {
-            max-width: none;
-            max-height: none;
             cursor: zoom-out;
+            transform-origin: center center;
         }
 
         .close-lightbox {
@@ -2506,6 +2510,27 @@ if (nextBtn) nextBtn.addEventListener('click', function() {
 if (likeBtn) likeBtn.addEventListener('click', handleLikeClick);
 if (toggleDanmuBtn) toggleDanmuBtn.addEventListener('click', toggleDanmu);
 
+// 图片双击放大/缩小功能
+if (lightboxImg) {
+    // 电脑端双击
+    lightboxImg.addEventListener('dblclick', function(e) {
+        e.stopPropagation();
+        toggleImageZoom();
+    });
+
+    // 移动端双击支持
+    let lastTap = 0;
+    lightboxImg.addEventListener('touchend', function(e) {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+            e.preventDefault();
+            toggleImageZoom();
+        }
+        lastTap = currentTime;
+    });
+}
+
 // 弹幕输入框展开/收起功能
 if (danmuInputContainerToggle) {
     danmuInputContainerToggle.addEventListener('click', function(e) {
@@ -3246,6 +3271,24 @@ async function sendDanmu() {
         // 更新图片变换
         function updateImageTransform() {
             lightboxImg.style.transform = 'scale(' + scale + ') translate(' + translateX + 'px, ' + translateY + 'px)';
+        }
+
+        // 切换图片缩放状态
+        function toggleImageZoom() {
+            if (!isZoomed) {
+                // 放大到2倍
+                scale = 2;
+                isZoomed = true;
+                lightboxImg.classList.add('zoomed');
+            } else {
+                // 缩小到原始大小
+                scale = 1;
+                translateX = 0;
+                translateY = 0;
+                isZoomed = false;
+                lightboxImg.classList.remove('zoomed');
+            }
+            updateImageTransform();
         }
 
         // ... 其他JavaScript函数保持不变 ...
