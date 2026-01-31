@@ -213,7 +213,7 @@ export async function handleUpload(request, env) {
         const originalFileName = file.name || '';
         const lastDotIndex = originalFileName.lastIndexOf('.');
 
-        if (lastDotIndex === -1 || lastDotIndex === fileName.length - 1) {
+        if (lastDotIndex === -1 || lastDotIndex === originalFileName.length - 1) {
             return new Response(JSON.stringify({
                 success: false,
                 error: '文件名无效或缺少扩展名'

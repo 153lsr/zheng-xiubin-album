@@ -641,6 +641,7 @@ export function getHTML() {
             background: linear-gradient(45deg, #FFD700, #FFA500);
             cursor: pointer;
             justify-content: center;
+            bottom: 25px;
         }
 
         .danmu-input-container.collapsed:hover {
@@ -739,7 +740,7 @@ export function getHTML() {
             position: fixed;
             bottom: 90px;
             right: 20px;
-            background: linear-gradient(45deg, #4CAF50, #45a049);
+            background: linear-gradient(45deg, #FFD700, #FFA500);
             color: white;
             border: none;
             width: 50px;
@@ -747,7 +748,7 @@ export function getHTML() {
             border-radius: 50%;
             cursor: pointer;
             font-weight: bold;
-            box-shadow: 0 3px 10px rgba(76, 175, 80, 0.4);
+            box-shadow: 0 3px 10px rgba(255, 215, 0, 0.4);
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
@@ -758,7 +759,7 @@ export function getHTML() {
 
         .toggle-danmu-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.5);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
         }
 
         /* 图片翻转卡片样式 */
@@ -1558,95 +1559,6 @@ export function getHTML() {
             box-shadow: 0 0 0 3px #FFD700;
         }
 
-        /* 批量操作栏 */
-        .batch-actions-bar {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: linear-gradient(135deg, #fff9c4 0%, #ffe0b2 100%);
-            border-radius: 20px;
-            padding: 15px 25px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            z-index: 1000;
-            transition: transform 0.3s ease;
-            border: 2px solid #FFD700;
-        }
-
-        .batch-actions-bar.visible {
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .batch-info {
-            font-weight: bold;
-            color: #E65F5C;
-        }
-
-        .batch-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .batch-btn.delete {
-            background: linear-gradient(135deg, #ff4757, #ff3838);
-            color: white;
-        }
-
-        .batch-btn.delete:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
-        }
-
-        .batch-btn.cancel {
-            background: linear-gradient(135deg, #e0e0e0, #bdbdbd);
-            color: #666;
-        }
-
-        .batch-btn.cancel:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* 批量选择模式切换按钮 */
-        .batch-mode-toggle {
-            position: fixed;
-            bottom: 160px;
-            right: 20px;
-            background: linear-gradient(135deg, #FFD700, #FFA500);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .batch-mode-toggle:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-        }
-
-        .batch-mode-toggle.active {
-            background: linear-gradient(135deg, #ff4757, #ff3838);
-        }
-
         /* 批量选择模式下的样式 */
         body.batch-select-mode .album-item {
             cursor: pointer;
@@ -2308,22 +2220,6 @@ export function getHTML() {
             </div>
         </div>
 
-        <!-- 批量选择模式切换按钮 -->
-        <button class="batch-mode-toggle" id="batch-mode-toggle" title="批量选择">
-            <i class="fas fa-check-square"></i>
-        </button>
-
-        <!-- 批量操作栏 -->
-        <div class="batch-actions-bar" id="batch-actions-bar">
-            <span class="batch-info">已选择 <span id="selected-count">0</span> 项</span>
-            <button class="batch-btn delete" id="batch-delete-btn">
-                <i class="fas fa-trash"></i> 批量删除
-            </button>
-            <button class="batch-btn cancel" id="batch-cancel-btn">
-                <i class="fas fa-times"></i> 取消
-            </button>
-        </div>
-
         <footer>
             <p>&copy; 郑秀彬专属相册集 | 为优秀演员郑秀彬应援!</p>
         </footer>
@@ -2393,12 +2289,6 @@ export function getHTML() {
         const confirmCancelBtn = document.getElementById('confirm-cancel');
         const confirmConfirmBtn = document.getElementById('confirm-confirm');
 
-        // 批量选择元素
-        const batchModeToggle = document.getElementById('batch-mode-toggle');
-        const batchActionsBar = document.getElementById('batch-actions-bar');
-        const selectedCount = document.getElementById('selected-count');
-        const batchDeleteBtn = document.getElementById('batch-delete-btn');
-        const batchCancelBtn = document.getElementById('batch-cancel-btn');
         const uploadError = document.getElementById('upload-error');
 
         // 密码弹窗元素
@@ -2488,6 +2378,13 @@ export function getHTML() {
         }
 
         async function confirmDelete() {
+            // 如果有选中的图片，执行批量删除
+            if (selectedAlbums.size > 0) {
+                hideDeleteConfirm();
+                await batchDelete();
+                return;
+            }
+
             if (!pendingDeleteId) return;
 
             hideDeleteConfirm();
@@ -2504,23 +2401,6 @@ export function getHTML() {
         // 批量选择和批量删除
         // ================================
 
-        function toggleBatchMode() {
-            isBatchSelectMode = !isBatchSelectMode;
-            document.body.classList.toggle('batch-select-mode', isBatchSelectMode);
-            batchModeToggle.classList.toggle('active', isBatchSelectMode);
-
-            // 更新图标
-            const icon = batchModeToggle.querySelector('i');
-            if (icon) {
-                icon.className = isBatchSelectMode ? 'fas fa-times' : 'fas fa-check-square';
-            }
-
-            // 如果退出批量模式，清空选择
-            if (!isBatchSelectMode) {
-                clearBatchSelection();
-            }
-        }
-
         function clearBatchSelection() {
             selectedAlbums.clear();
             document.querySelectorAll('.batch-select-checkbox').forEach(cb => {
@@ -2529,7 +2409,6 @@ export function getHTML() {
             document.querySelectorAll('.album-item').forEach(item => {
                 item.classList.remove('selected');
             });
-            updateBatchSelection();
         }
 
         function updateBatchSelection() {
@@ -2538,15 +2417,6 @@ export function getHTML() {
             checkboxes.forEach(cb => {
                 selectedAlbums.add(cb.dataset.id);
             });
-
-            selectedCount.textContent = selectedAlbums.size;
-
-            // 显示/隐藏批量操作栏
-            if (selectedAlbums.size > 0) {
-                batchActionsBar.classList.add('visible');
-            } else {
-                batchActionsBar.classList.remove('visible');
-            }
         }
 
         function showBatchDeleteConfirm() {
@@ -2596,7 +2466,6 @@ export function getHTML() {
 
             // 清空选择并重新加载
             clearBatchSelection();
-            toggleBatchMode(); // 退出批量模式
             await loadAlbums(currentPage);
             renderAlbums();
 
@@ -2890,7 +2759,6 @@ export function getHTML() {
 
                     // 清空选择并重新加载
                     clearBatchSelection();
-                    toggleBatchMode(); // 退出批量模式
                     await loadAlbums(currentPage);
                     renderAlbums();
 
@@ -2971,16 +2839,6 @@ export function getHTML() {
             if (confirmModal) confirmModal.addEventListener('click', function(e) {
                 if (e.target === confirmModal) hideDeleteConfirm();
             });
-
-            // ================================
-            // 批量选择和批量删除事件监听
-            // ================================
-            if (batchModeToggle) batchModeToggle.addEventListener('click', toggleBatchMode);
-            if (batchCancelBtn) batchCancelBtn.addEventListener('click', function() {
-                clearBatchSelection();
-                if (isBatchSelectMode) toggleBatchMode();
-            });
-            if (batchDeleteBtn) batchDeleteBtn.addEventListener('click', showBatchDeleteConfirm);
 
 // Lightbox：关闭/上一张/下一张/点赞/弹幕
 if (closeLightbox) closeLightbox.addEventListener('click', closeLightboxUI);
@@ -3343,8 +3201,12 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
         // 更新登录显示
         function updateLoginDisplay() {
             loginSection.innerHTML = '';
-            
+
             if (isAdmin) {
+                // 管理员登录后进入批量选择模式
+                isBatchSelectMode = true;
+                document.body.classList.add('batch-select-mode');
+
                 loginSection.innerHTML = \`
                     <div class="user-info" title="管理员已登录">
                         <i class="fas fa-user-shield"></i>
@@ -3414,6 +3276,10 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
         function logout() {
             isAdmin = false;
             window._adminPassword = '';
+            // 退出批量选择模式并清空选择
+            isBatchSelectMode = false;
+            document.body.classList.remove('batch-select-mode');
+            clearBatchSelection();
             updateLoginDisplay();
             alert('已退出管理员账户');
         }
@@ -3512,8 +3378,13 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
                 const deleteBtn = albumItem.querySelector('.delete-btn');
                 deleteBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    // 显示删除确认对话框
-                    showDeleteConfirm(album.id, album.title);
+                    // 如果有已选中的图片，触发批量删除确认弹窗
+                    if (selectedAlbums.size > 0) {
+                        showBatchDeleteConfirm();
+                    } else {
+                        // 否则走单张删除流程
+                        showDeleteConfirm(album.id, album.title);
+                    }
                 });
 
                 gallery.appendChild(albumItem);
