@@ -210,8 +210,8 @@ export async function handleUpload(request, env) {
         }
 
         // 验证并提取文件扩展名
-        const fileName = file.name || '';
-        const lastDotIndex = fileName.lastIndexOf('.');
+        const originalFileName = file.name || '';
+        const lastDotIndex = originalFileName.lastIndexOf('.');
 
         if (lastDotIndex === -1 || lastDotIndex === fileName.length - 1) {
             return new Response(JSON.stringify({
@@ -223,7 +223,7 @@ export async function handleUpload(request, env) {
             });
         }
 
-        const fileExtension = fileName.substring(lastDotIndex + 1).toLowerCase();
+        const fileExtension = originalFileName.substring(lastDotIndex + 1).toLowerCase();
 
         // 验证扩展名只包含字母数字
         if (!/^[a-z0-9]+$/.test(fileExtension)) {
@@ -266,10 +266,10 @@ export async function handleUpload(request, env) {
 
         const timestamp = Date.now();
         const randomStr = Math.random().toString(36).substring(2, 11);
-        const fileName = `${timestamp}_${randomStr}.${fileExtension}`;
+        const newFileName = `${timestamp}_${randomStr}.${fileExtension}`;
 
         try {
-            await env.IMAGE_BUCKET.put(fileName, file);
+            await env.IMAGE_BUCKET.put(newFileName, file);
         } catch (r2Error) {
             return new Response(JSON.stringify({
                 success: false,
@@ -284,7 +284,7 @@ export async function handleUpload(request, env) {
         if (Date.now() - startTime > timeoutMs) {
             // 尝试清理已上传的文件
             try {
-                await env.IMAGE_BUCKET.delete(fileName);
+                await env.IMAGE_BUCKET.delete(newFileName);
             } catch (e) {
                 console.error('清理文件失败:', e);
             }
@@ -292,7 +292,7 @@ export async function handleUpload(request, env) {
         }
 
         const albumId = timestamp.toString();
-        const imageUrl = `/images/${fileName}`;
+        const imageUrl = `/images/${newFileName}`;
 
         const albumData = {
             id: parseInt(albumId),
