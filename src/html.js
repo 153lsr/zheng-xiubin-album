@@ -2896,9 +2896,9 @@ export function getHTML() {
 
                     // 显示结果
                     if (failCount === 0) {
-                        alert(`成功删除 ${successCount} 张照片！`);
+                        alert('成功删除 ' + successCount + ' 张照片！');
                     } else {
-                        alert(`删除完成：成功 ${successCount} 张，失败 ${failCount} 张`);
+                        alert('删除完成：成功 ' + successCount + ' 张，失败 ' + failCount + ' 张');
                     }
                 }
             });
