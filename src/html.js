@@ -2475,7 +2475,7 @@ export function getHTML() {
             pendingDeleteId = albumId;
             pendingDeleteTitle = title || '这张照片';
             confirmTitle.textContent = '确认删除';
-            confirmMessage.textContent = `确定要删除"${pendingDeleteTitle}"吗？此操作无法撤销。`;
+            confirmMessage.textContent = '确定要删除"' + pendingDeleteTitle + '"吗？此操作无法撤销。';
             confirmModal.classList.add('active');
             document.body.style.overflow = 'hidden';
         }
@@ -2552,7 +2552,7 @@ export function getHTML() {
         function showBatchDeleteConfirm() {
             const count = selectedAlbums.size;
             confirmTitle.textContent = '批量删除确认';
-            confirmMessage.textContent = `确定要删除选中的 ${count} 张照片吗？此操作无法撤销。`;
+            confirmMessage.textContent = '确定要删除选中的 ' + count + ' 张照片吗？此操作无法撤销。';
             confirmModal.classList.add('active');
             document.body.style.overflow = 'hidden';
         }
