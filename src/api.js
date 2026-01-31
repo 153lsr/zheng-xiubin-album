@@ -10,69 +10,6 @@ function safeJSONParse(str, defaultValue = null) {
     }
 }
 
-// 审计日志记录函数
-async function logAuditAction(env, action, details) {
-    try {
-        const timestamp = Date.now();
-        const logKey = `audit_log_${timestamp}`;
-        const logData = {
-            action,
-            timestamp: new Date().toISOString(),
-            ...details
-        };
-        // 日志保留 30 天
-        await env.ALBUM_KV2.put(logKey, JSON.stringify(logData), { expirationTtl: 2592000 });
-    } catch (error) {
-        console.error('Failed to log audit action:', error);
-        // 不抛出错误，避免影响主要操作
-    }
-}
-
-// 统一错误响应函数
-function createErrorResponse(error, statusCode, corsHeaders) {
-    return new Response(JSON.stringify({
-        success: false,
-        error: error
-    }), {
-        status: statusCode,
-        headers: corsHeaders
-    });
-}
-
-// 统一成功响应函数
-function createSuccessResponse(data, corsHeaders) {
-    return new Response(JSON.stringify({
-        success: true,
-        ...data
-    }), {
-        status: 200,
-        headers: corsHeaders
-    });
-}
-
-// 全局速率限制检查
-async function checkGlobalRateLimit(env, clientIP) {
-    const rateLimitKey = `global_rate_${clientIP}`;
-    const rateData = await env.ALBUM_KV2.get(rateLimitKey);
-
-    if (!rateData) {
-        // 首次请求，设置计数为 1，1 分钟过期
-        await env.ALBUM_KV2.put(rateLimitKey, '1', { expirationTtl: 60 });
-        return { allowed: true, count: 1 };
-    }
-
-    const count = parseInt(rateData, 10);
-    const MAX_REQUESTS_PER_MINUTE = 60; // 每分钟最多 60 次请求
-
-    if (count >= MAX_REQUESTS_PER_MINUTE) {
-        return { allowed: false, count };
-    }
-
-    // 增加计数
-    await env.ALBUM_KV2.put(rateLimitKey, String(count + 1), { expirationTtl: 60 });
-    return { allowed: true, count: count + 1 };
-}
-
 // 获取相册（支持分页）- 优化版本
 // 使用 KV cursor 分页，避免一次性加载所有数据
 export async function handleGetAlbums(request, env) {
@@ -185,13 +122,6 @@ export async function handleGetAlbums(request, env) {
 export async function handleUpload(request, env) {
     const corsHeaders = getCorsHeaders(request);
 
-    // 全局速率限制检查
-    const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-    const rateLimit = await checkGlobalRateLimit(env, clientIP);
-    if (!rateLimit.allowed) {
-        return createErrorResponse('请求过于频繁，请稍后再试', 429, corsHeaders);
-    }
-
     // 添加超时保护
     const timeoutMs = 25000;  // 25秒超时（留 5 秒缓冲）
     const startTime = Date.now();
@@ -270,10 +200,9 @@ export async function handleUpload(request, env) {
         try {
             metadata = JSON.parse(metadataStr);
         } catch (parseError) {
-            console.error('Metadata parse error:', parseError);
             return new Response(JSON.stringify({
                 success: false,
-                error: '元数据格式错误，请检查数据格式'
+                error: '元数据格式错误: ' + parseError.message
             }), {
                 status: 400,
                 headers: corsHeaders
@@ -281,10 +210,10 @@ export async function handleUpload(request, env) {
         }
 
         // 验证并提取文件扩展名
-        const originalFileName = file.name || '';
-        const lastDotIndex = originalFileName.lastIndexOf('.');
+        const fileName = file.name || '';
+        const lastDotIndex = fileName.lastIndexOf('.');
 
-        if (lastDotIndex === -1 || lastDotIndex === originalFileName.length - 1) {
+        if (lastDotIndex === -1 || lastDotIndex === fileName.length - 1) {
             return new Response(JSON.stringify({
                 success: false,
                 error: '文件名无效或缺少扩展名'
@@ -294,13 +223,13 @@ export async function handleUpload(request, env) {
             });
         }
 
-        const fileExtension = originalFileName.substring(lastDotIndex + 1).toLowerCase();
+        const fileExtension = fileName.substring(lastDotIndex + 1).toLowerCase();
 
-        // 验证扩展名只包含字母数字，且长度合理
-        if (!/^[a-z0-9]{1,10}$/.test(fileExtension)) {
+        // 验证扩展名只包含字母数字
+        if (!/^[a-z0-9]+$/.test(fileExtension)) {
             return new Response(JSON.stringify({
                 success: false,
-                error: '文件扩展名无效'
+                error: '文件扩展名包含非法字符'
             }), {
                 status: 400,
                 headers: corsHeaders
@@ -342,10 +271,9 @@ export async function handleUpload(request, env) {
         try {
             await env.IMAGE_BUCKET.put(fileName, file);
         } catch (r2Error) {
-            console.error('R2 upload error:', r2Error);
             return new Response(JSON.stringify({
                 success: false,
-                error: '文件上传失败，请稍后重试'
+                error: '文件上传到存储失败: ' + r2Error.message
             }), {
                 status: 500,
                 headers: corsHeaders
@@ -381,7 +309,6 @@ export async function handleUpload(request, env) {
         try {
             await env.ALBUM_KV2.put(`album_${albumId}`, JSON.stringify(albumData));
         } catch (kvError) {
-            console.error('KV save error:', kvError);
             try {
                 await env.IMAGE_BUCKET.delete(fileName);
             } catch (deleteError) {
@@ -390,21 +317,12 @@ export async function handleUpload(request, env) {
 
             return new Response(JSON.stringify({
                 success: false,
-                error: '数据保存失败，请稍后重试'
+                error: '相册数据保存失败: ' + kvError.message
             }), {
                 status: 500,
                 headers: corsHeaders
             });
         }
-
-        // 记录审计日志
-        await logAuditAction(env, 'upload_album', {
-            albumId,
-            fileName,
-            category: metadata.category,
-            ip: clientIP,
-            userAgent: request.headers.get('User-Agent') || 'unknown'
-        });
 
         return new Response(JSON.stringify({
             success: true,
@@ -426,14 +344,6 @@ export async function handleUpload(request, env) {
 // 删除图片
 export async function handleDelete(request, env) {
     const corsHeaders = getCorsHeaders(request);
-
-    // 全局速率限制检查
-    const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-    const rateLimit = await checkGlobalRateLimit(env, clientIP);
-    if (!rateLimit.allowed) {
-        return createErrorResponse('请求过于频繁，请稍后再试', 429, corsHeaders);
-    }
-
     try {
         const data = await request.json();
         const { id, password } = data;
@@ -485,13 +395,6 @@ export async function handleDelete(request, env) {
 
         await env.ALBUM_KV2.delete(`album_${id}`);
 
-        // 记录审计日志
-        await logAuditAction(env, 'delete_album', {
-            albumId: id,
-            ip: clientIP,
-            userAgent: request.headers.get('User-Agent') || 'unknown'
-        });
-
         return new Response(JSON.stringify({
             success: true,
             message: '删除成功'
@@ -512,14 +415,6 @@ export async function handleDelete(request, env) {
 // 点赞处理（带防刷机制）
 export async function handleLike(request, env) {
     const corsHeaders = getCorsHeaders(request);
-
-    // 全局速率限制检查
-    const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-    const rateLimit = await checkGlobalRateLimit(env, clientIP);
-    if (!rateLimit.allowed) {
-        return createErrorResponse('请求过于频繁，请稍后再试', 429, corsHeaders);
-    }
-
     try {
         const data = await request.json();
         const { albumId } = data;
@@ -534,6 +429,7 @@ export async function handleLike(request, env) {
             });
         }
 
+        const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
         const likeKey = `like_${albumId}_${clientIP}`;
 
         const existingLike = await env.ALBUM_KV2.get(likeKey);
@@ -597,59 +493,58 @@ export async function handleLike(request, env) {
 // 评论处理（带防刷机制）
 export async function handleComment(request, env) {
     const corsHeaders = getCorsHeaders(request);
-
-    // 全局速率限制检查
-    const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-    const rateLimit = await checkGlobalRateLimit(env, clientIP);
-    if (!rateLimit.allowed) {
-        return createErrorResponse('请求过于频繁，请稍后再试', 429, corsHeaders);
-    }
-
     try {
         const data = await request.json();
         const { albumId, comment } = data;
 
-        // 验证 albumId
-        if (!albumId || typeof albumId !== 'string' && typeof albumId !== 'number') {
-            return createErrorResponse('缺少或无效的相册ID', 400, corsHeaders);
+        if (!albumId || !comment) {
+            return new Response(JSON.stringify({
+                success: false,
+                error: '缺少参数'
+            }), {
+                status: 400,
+                headers: corsHeaders
+            });
         }
 
-        // 验证 comment 对象
-        if (!comment || typeof comment !== 'object') {
-            return createErrorResponse('缺少或无效的评论数据', 400, corsHeaders);
-        }
-
-        // 验证评论文本
-        const commentText = comment.text;
-        if (!commentText || typeof commentText !== 'string') {
-            return createErrorResponse('评论内容不能为空', 400, corsHeaders);
-        }
-
-        // 验证评论长度（在转义前）
-        const MAX_COMMENT_LENGTH = 500;
-        if (commentText.length > MAX_COMMENT_LENGTH) {
-            return createErrorResponse(`评论内容不能超过 ${MAX_COMMENT_LENGTH} 个字符`, 400, corsHeaders);
-        }
-
+        const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
         const commentRateKey = `comment_rate_${clientIP}`;
 
         const rateData = await env.ALBUM_KV2.get(commentRateKey);
         let commentCount = rateData ? parseInt(rateData, 10) : 0;
 
         if (commentCount >= 5) {
-            return createErrorResponse('评论太频繁，请稍后再试', 429, corsHeaders);
+            return new Response(JSON.stringify({
+                success: false,
+                error: '评论太频繁，请稍后再试'
+            }), {
+                status: 429,
+                headers: corsHeaders
+            });
         }
 
         const albumKey = `album_${albumId}`;
         const albumData = await env.ALBUM_KV2.get(albumKey);
 
         if (!albumData) {
-            return createErrorResponse('相册不存在', 404, corsHeaders);
+            return new Response(JSON.stringify({
+                success: false,
+                error: '相册不存在'
+            }), {
+                status: 404,
+                headers: corsHeaders
+            });
         }
 
         const album = safeJSONParse(albumData);
         if (!album) {
-            return createErrorResponse('相册数据损坏', 500, corsHeaders);
+            return new Response(JSON.stringify({
+                success: false,
+                error: '相册数据损坏'
+            }), {
+                status: 500,
+                headers: corsHeaders
+            });
         }
 
         album.comments = album.comments || [];
@@ -672,36 +567,44 @@ export async function handleComment(request, env) {
                 .replace(/'/g, '&#039;');
         };
 
-        // 限制作者名称长度
+        // 限制评论长度
+        const MAX_COMMENT_LENGTH = 500;
         const MAX_AUTHOR_LENGTH = 50;
+        const commentText = comment.text || '';
         const authorName = comment.author || '匿名用户';
+
+        const truncatedText = commentText.length > MAX_COMMENT_LENGTH
+            ? commentText.substring(0, MAX_COMMENT_LENGTH) + '...'
+            : commentText;
 
         album.comments.push({
             author: escapeHtml(authorName).substring(0, MAX_AUTHOR_LENGTH),
-            text: escapeHtml(commentText),
+            text: escapeHtml(truncatedText),
             time: comment.time || new Date().toLocaleString('zh-CN')
         });
 
         await env.ALBUM_KV2.put(commentRateKey, String(commentCount + 1), { expirationTtl: 60 });
         await env.ALBUM_KV2.put(albumKey, JSON.stringify(album));
 
-        return createSuccessResponse({}, corsHeaders);
+        return new Response(JSON.stringify({
+            success: true
+        }), {
+            headers: corsHeaders
+        });
     } catch (error) {
-        return createErrorResponse('评论失败: ' + error.message, 500, corsHeaders);
+        return new Response(JSON.stringify({
+            success: false,
+            error: '评论失败: ' + error.message
+        }), {
+            status: 500,
+            headers: corsHeaders
+        });
     }
 }
 
 // 更新图片故事
 export async function handleUpdateStory(request, env) {
     const corsHeaders = getCorsHeaders(request);
-
-    // 全局速率限制检查
-    const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-    const rateLimit = await checkGlobalRateLimit(env, clientIP);
-    if (!rateLimit.allowed) {
-        return createErrorResponse('请求过于频繁，请稍后再试', 429, corsHeaders);
-    }
-
     try {
         const data = await request.json();
         const { id, desc, password } = data;
@@ -761,18 +664,9 @@ export async function handleUpdateStory(request, env) {
             });
         }
 
-        // 限制描述长度
-        const MAX_DESC_LENGTH = 1000;
-        album.desc = (desc || '').substring(0, MAX_DESC_LENGTH);
+        album.desc = desc || '';
 
         await env.ALBUM_KV2.put(albumKey, JSON.stringify(album));
-
-        // 记录审计日志
-        await logAuditAction(env, 'update_story', {
-            albumId: id,
-            ip: clientIP,
-            userAgent: request.headers.get('User-Agent') || 'unknown'
-        });
 
         return new Response(JSON.stringify({
             success: true,

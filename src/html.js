@@ -3,7 +3,7 @@ export function getHTML() {
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=0.75, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>郑秀彬专属相册集</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -501,28 +501,23 @@ export function getHTML() {
             width: 100%;
             height: 100%;
             position: relative;
-            padding: 20px; /* 适当的边距 */
         }
 
         .lightbox-content {
             max-width: 90%;
             max-height: 80vh;
-            width: auto;
-            height: auto;
-            object-fit: contain;
             border-radius: 15px;
             box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
             cursor: zoom-in;
             transition: transform 0.3s ease;
             border: 5px solid #FFD700;
             z-index: 100;
-            display: block;
-            margin: auto;
         }
 
         .lightbox-content.zoomed {
+            max-width: none;
+            max-height: none;
             cursor: zoom-out;
-            transform-origin: center center;
         }
 
         .close-lightbox {
@@ -739,12 +734,12 @@ export function getHTML() {
             font-size: 1.1rem;
         }
 
-        /* 隐藏/显示弹幕按钮 - 黄色圆形 */
+        /* 隐藏/显示弹幕按钮 */
         .toggle-danmu-btn {
             position: fixed;
-            bottom: 20px;
+            bottom: 90px;
             right: 20px;
-            background: linear-gradient(45deg, #FFD700, #FFA500);
+            background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
             border: none;
             width: 50px;
@@ -752,7 +747,7 @@ export function getHTML() {
             border-radius: 50%;
             cursor: pointer;
             font-weight: bold;
-            box-shadow: 0 3px 10px rgba(255, 215, 0, 0.4);
+            box-shadow: 0 3px 10px rgba(76, 175, 80, 0.4);
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
@@ -763,7 +758,7 @@ export function getHTML() {
 
         .toggle-danmu-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.5);
         }
 
         /* 图片翻转卡片样式 */
@@ -1408,6 +1403,263 @@ export function getHTML() {
             display: none;
         }
 
+        /* 删除确认对话框 */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .confirm-modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .confirm-content {
+            background: linear-gradient(135deg, #fff9c4 0%, #ffe0b2 100%);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 71, 87, 0.6);
+            border: 3px solid #ff4757;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .confirm-modal.active .confirm-content {
+            transform: scale(1);
+        }
+
+        .confirm-content h3 {
+            color: #ff4757;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .confirm-content p {
+            color: #666;
+            margin: 15px 0;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .confirm-icon {
+            font-size: 3rem;
+            color: #ff4757;
+            margin-bottom: 15px;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .confirm-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .confirm-btn.cancel {
+            background: linear-gradient(135deg, #e0e0e0, #bdbdbd);
+            color: #666;
+        }
+
+        .confirm-btn.cancel:hover {
+            background: linear-gradient(135deg, #bdbdbd, #9e9e9e);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .confirm-btn.confirm {
+            background: linear-gradient(135deg, #ff4757, #ff3838);
+            color: white;
+        }
+
+        .confirm-btn.confirm:hover {
+            background: linear-gradient(135deg, #ff3838, #e63939);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+        }
+
+        /* 批量选择复选框 */
+        .batch-select-checkbox {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            z-index: 11;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .album-item:hover .batch-select-checkbox,
+        .album-item.selected .batch-select-checkbox {
+            opacity: 1;
+        }
+
+        .batch-select-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #FFD700;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease, background 0.3s ease;
+        }
+
+        .album-item:hover .batch-select-label,
+        .album-item.selected .batch-select-label {
+            opacity: 1;
+        }
+
+        .batch-select-checkbox:checked + .batch-select-label {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border-color: #FFA500;
+        }
+
+        .batch-select-checkbox:checked + .batch-select-label::after {
+            content: '✓';
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .album-item.selected {
+            box-shadow: 0 0 0 3px #FFD700;
+        }
+
+        /* 批量操作栏 */
+        .batch-actions-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: linear-gradient(135deg, #fff9c4 0%, #ffe0b2 100%);
+            border-radius: 20px;
+            padding: 15px 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            border: 2px solid #FFD700;
+        }
+
+        .batch-actions-bar.visible {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .batch-info {
+            font-weight: bold;
+            color: #E65F5C;
+        }
+
+        .batch-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .batch-btn.delete {
+            background: linear-gradient(135deg, #ff4757, #ff3838);
+            color: white;
+        }
+
+        .batch-btn.delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+        }
+
+        .batch-btn.cancel {
+            background: linear-gradient(135deg, #e0e0e0, #bdbdbd);
+            color: #666;
+        }
+
+        .batch-btn.cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 批量选择模式切换按钮 */
+        .batch-mode-toggle {
+            position: fixed;
+            bottom: 160px;
+            right: 20px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .batch-mode-toggle:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .batch-mode-toggle.active {
+            background: linear-gradient(135deg, #ff4757, #ff3838);
+        }
+
+        /* 批量选择模式下的样式 */
+        body.batch-select-mode .album-item {
+            cursor: pointer;
+        }
+
+        body.batch-select-mode .album-item:hover {
+            transform: scale(1.02);
+        }
+
+        body.batch-select-mode .batch-select-label {
+            opacity: 1;
+        }
+
         footer {
             text-align: center;
             padding: 40px 20px;
@@ -1581,7 +1833,7 @@ export function getHTML() {
             .gallery {
                 grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             }
-
+            
             .profile-section {
                 flex-direction: column;
                 text-align: center;
@@ -1633,14 +1885,9 @@ export function getHTML() {
             .danmu-input-container {
                 width: 95%;
                 padding: 6px;
-                bottom: 80px;
+                bottom: 10px;
             }
-
-            .danmu-input-container.collapsed {
-                width: 50px;
-                height: 50px;
-            }
-
+            
             .danmu-input {
                 padding: 10px 12px;
                 font-size: 0.9rem;
@@ -2047,7 +2294,36 @@ export function getHTML() {
                 </div>
             </div>
         </div>
-        
+
+        <!-- 删除确认对话框 -->
+        <div class="confirm-modal" id="confirm-modal">
+            <div class="confirm-content">
+                <div class="confirm-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3 id="confirm-title">确认删除</h3>
+                <p id="confirm-message">确定要删除这张照片吗？此操作无法撤销。</p>
+                <div class="confirm-buttons">
+                    <button class="confirm-btn cancel" id="confirm-cancel">取消</button>
+                    <button class="confirm-btn confirm" id="confirm-confirm">确认删除</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 批量选择模式切换按钮 -->
+        <button class="batch-mode-toggle" id="batch-mode-toggle" title="批量选择">
+            <i class="fas fa-check-square"></i>
+        </button>
+
+        <!-- 批量操作栏 -->
+        <div class="batch-actions-bar" id="batch-actions-bar">
+            <span class="batch-info">已选择 <span id="selected-count">0</span> 项</span>
+            <button class="batch-btn delete" id="batch-delete-btn">
+                <i class="fas fa-trash"></i> 批量删除
+            </button>
+            <button class="batch-btn cancel" id="batch-cancel-btn">
+                <i class="fas fa-times"></i> 取消
+            </button>
+        </div>
+
         <footer>
             <p>&copy; 郑秀彬专属相册集 | 为优秀演员郑秀彬应援!</p>
         </footer>
@@ -2065,6 +2341,10 @@ export function getHTML() {
         // 全局变量
         let albums = [];
         let announcementContent = "欢迎来到郑秀彬专属相册集！这里珍藏着秀彬的每一个精彩瞬间。请尽情欣赏并留下您的宝贵评论。";
+        let isBatchSelectMode = false;  // 批量选择模式
+        let selectedAlbums = new Set();  // 已选择的相册ID
+        let pendingDeleteId = null;  // 待删除的相册ID
+        let pendingDeleteTitle = '';  // 待删除的相册标题
 
         // 获取DOM元素
         const gallery = document.getElementById('gallery');
@@ -2105,6 +2385,20 @@ export function getHTML() {
         const editCancel = document.getElementById('edit-cancel');
         const progressBar = document.getElementById('progress-bar');
         const titleError = document.getElementById('title-error');
+
+        // 删除确认对话框元素
+        const confirmModal = document.getElementById('confirm-modal');
+        const confirmTitle = document.getElementById('confirm-title');
+        const confirmMessage = document.getElementById('confirm-message');
+        const confirmCancelBtn = document.getElementById('confirm-cancel');
+        const confirmConfirmBtn = document.getElementById('confirm-confirm');
+
+        // 批量选择元素
+        const batchModeToggle = document.getElementById('batch-mode-toggle');
+        const batchActionsBar = document.getElementById('batch-actions-bar');
+        const selectedCount = document.getElementById('selected-count');
+        const batchDeleteBtn = document.getElementById('batch-delete-btn');
+        const batchCancelBtn = document.getElementById('batch-cancel-btn');
         const uploadError = document.getElementById('upload-error');
 
         // 密码弹窗元素
@@ -2171,6 +2465,147 @@ export function getHTML() {
             passwordModal.classList.remove('active');
             document.body.style.overflow = 'auto';
             pendingPassword = { type: null, albumId: null };
+        }
+
+        // ================================
+        // 删除确认对话框
+        // ================================
+
+        function showDeleteConfirm(albumId, title) {
+            pendingDeleteId = albumId;
+            pendingDeleteTitle = title || '这张照片';
+            confirmTitle.textContent = '确认删除';
+            confirmMessage.textContent = `确定要删除"${pendingDeleteTitle}"吗？此操作无法撤销。`;
+            confirmModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideDeleteConfirm() {
+            confirmModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+            pendingDeleteId = null;
+            pendingDeleteTitle = '';
+        }
+
+        async function confirmDelete() {
+            if (!pendingDeleteId) return;
+
+            hideDeleteConfirm();
+
+            // 如果已登录，使用保存的密码；否则需要输入密码
+            if (isAdmin && window._adminPassword) {
+                await deleteAlbum(pendingDeleteId, window._adminPassword);
+            } else {
+                showPasswordModal('delete', pendingDeleteId);
+            }
+        }
+
+        // ================================
+        // 批量选择和批量删除
+        // ================================
+
+        function toggleBatchMode() {
+            isBatchSelectMode = !isBatchSelectMode;
+            document.body.classList.toggle('batch-select-mode', isBatchSelectMode);
+            batchModeToggle.classList.toggle('active', isBatchSelectMode);
+
+            // 更新图标
+            const icon = batchModeToggle.querySelector('i');
+            if (icon) {
+                icon.className = isBatchSelectMode ? 'fas fa-times' : 'fas fa-check-square';
+            }
+
+            // 如果退出批量模式，清空选择
+            if (!isBatchSelectMode) {
+                clearBatchSelection();
+            }
+        }
+
+        function clearBatchSelection() {
+            selectedAlbums.clear();
+            document.querySelectorAll('.batch-select-checkbox').forEach(cb => {
+                cb.checked = false;
+            });
+            document.querySelectorAll('.album-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            updateBatchSelection();
+        }
+
+        function updateBatchSelection() {
+            const checkboxes = document.querySelectorAll('.batch-select-checkbox:checked');
+            selectedAlbums.clear();
+            checkboxes.forEach(cb => {
+                selectedAlbums.add(cb.dataset.id);
+            });
+
+            selectedCount.textContent = selectedAlbums.size;
+
+            // 显示/隐藏批量操作栏
+            if (selectedAlbums.size > 0) {
+                batchActionsBar.classList.add('visible');
+            } else {
+                batchActionsBar.classList.remove('visible');
+            }
+        }
+
+        function showBatchDeleteConfirm() {
+            const count = selectedAlbums.size;
+            confirmTitle.textContent = '批量删除确认';
+            confirmMessage.textContent = `确定要删除选中的 ${count} 张照片吗？此操作无法撤销。`;
+            confirmModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        async function batchDelete() {
+            if (selectedAlbums.size === 0) return;
+
+            hideDeleteConfirm();
+
+            // 检查密码
+            let password = null;
+            if (isAdmin && window._adminPassword) {
+                password = window._adminPassword;
+            } else {
+                // 需要输入密码
+                return showPasswordModal('batch_delete', null);
+            }
+
+            // 执行批量删除
+            const ids = Array.from(selectedAlbums);
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const id of ids) {
+                try {
+                    const resp = await fetch('/api/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: id, password: password })
+                    });
+                    if (resp.ok) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                    }
+                } catch (error) {
+                    console.error('删除失败:', id, error);
+                    failCount++;
+                }
+            }
+
+            // 清空选择并重新加载
+            clearBatchSelection();
+            toggleBatchMode(); // 退出批量模式
+            await loadAlbums(currentPage);
+            renderAlbums();
+
+            // 显示结果
+            if (failCount === 0) {
+                alert(`成功删除 ${successCount} 张照片！`);
+            } else {
+                alert(`删除完成：成功 ${successCount} 张，失败 ${failCount} 张`);
+            }
         }
 
         async function deleteAlbum(albumId, password) {
@@ -2429,6 +2864,43 @@ export function getHTML() {
                     window._announcementPassword = pwd;
                     showAnnouncementModal();
                 }
+                if (type === 'batch_delete') {
+                    // 批量删除
+                    const ids = Array.from(selectedAlbums);
+                    let successCount = 0;
+                    let failCount = 0;
+
+                    for (const albumId of ids) {
+                        try {
+                            const resp = await fetch('/api/delete', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id: albumId, password: pwd })
+                            });
+                            if (resp.ok) {
+                                successCount++;
+                            } else {
+                                failCount++;
+                            }
+                        } catch (error) {
+                            console.error('删除失败:', albumId, error);
+                            failCount++;
+                        }
+                    }
+
+                    // 清空选择并重新加载
+                    clearBatchSelection();
+                    toggleBatchMode(); // 退出批量模式
+                    await loadAlbums(currentPage);
+                    renderAlbums();
+
+                    // 显示结果
+                    if (failCount === 0) {
+                        alert(`成功删除 ${successCount} 张照片！`);
+                    } else {
+                        alert(`删除完成：成功 ${successCount} 张，失败 ${failCount} 张`);
+                    }
+                }
             });
 
             // 公告浮层：关闭/编辑
@@ -2491,45 +2963,28 @@ export function getHTML() {
                 imageCard.classList.toggle('flipped');
             });
 
+            // ================================
+            // 删除确认对话框事件监听
+            // ================================
+            if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', hideDeleteConfirm);
+            if (confirmConfirmBtn) confirmConfirmBtn.addEventListener('click', confirmDelete);
+            if (confirmModal) confirmModal.addEventListener('click', function(e) {
+                if (e.target === confirmModal) hideDeleteConfirm();
+            });
+
+            // ================================
+            // 批量选择和批量删除事件监听
+            // ================================
+            if (batchModeToggle) batchModeToggle.addEventListener('click', toggleBatchMode);
+            if (batchCancelBtn) batchCancelBtn.addEventListener('click', function() {
+                clearBatchSelection();
+                if (isBatchSelectMode) toggleBatchMode();
+            });
+            if (batchDeleteBtn) batchDeleteBtn.addEventListener('click', showBatchDeleteConfirm);
+
 // Lightbox：关闭/上一张/下一张/点赞/弹幕
 if (closeLightbox) closeLightbox.addEventListener('click', closeLightboxUI);
 if (lightbox) lightbox.addEventListener('click', function(e) { if (e.target === lightbox) closeLightboxUI(); });
-
-if (prevBtn) prevBtn.addEventListener('click', function() {
-    if (!albums || !albums.length) return;
-    currentIndex = (currentIndex - 1 + albums.length) % albums.length;
-    openLightbox(albums[currentIndex]);
-});
-
-if (nextBtn) nextBtn.addEventListener('click', function() {
-    if (!albums || !albums.length) return;
-    currentIndex = (currentIndex + 1) % albums.length;
-    openLightbox(albums[currentIndex]);
-});
-
-if (likeBtn) likeBtn.addEventListener('click', handleLikeClick);
-if (toggleDanmuBtn) toggleDanmuBtn.addEventListener('click', toggleDanmu);
-
-// 图片双击放大/缩小功能
-if (lightboxImg) {
-    // 电脑端双击
-    lightboxImg.addEventListener('dblclick', function(e) {
-        e.stopPropagation();
-        toggleImageZoom();
-    });
-
-    // 移动端双击支持
-    let lastTap = 0;
-    lightboxImg.addEventListener('touchend', function(e) {
-        const currentTime = new Date().getTime();
-        const tapLength = currentTime - lastTap;
-        if (tapLength < 300 && tapLength > 0) {
-            e.preventDefault();
-            toggleImageZoom();
-        }
-        lastTap = currentTime;
-    });
-}
 
 // 弹幕输入框展开/收起功能
 if (danmuInputContainerToggle) {
@@ -2556,6 +3011,20 @@ if (danmuInputContainerToggle) {
     });
 }
 
+if (prevBtn) prevBtn.addEventListener('click', function() {
+    if (!albums || !albums.length) return;
+    currentIndex = (currentIndex - 1 + albums.length) % albums.length;
+    openLightbox(albums[currentIndex]);
+});
+
+if (nextBtn) nextBtn.addEventListener('click', function() {
+    if (!albums || !albums.length) return;
+    currentIndex = (currentIndex + 1) % albums.length;
+    openLightbox(albums[currentIndex]);
+});
+
+if (likeBtn) likeBtn.addEventListener('click', handleLikeClick);
+if (toggleDanmuBtn) toggleDanmuBtn.addEventListener('click', toggleDanmu);
 if (danmuSubmit) danmuSubmit.addEventListener('click', sendDanmu);
 if (danmuInput) danmuInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
@@ -2994,6 +3463,8 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
                         '</div>' +
                         '<div class="album-date">' + escapeHtml(formattedDate) + '</div>' +
                     '</div>' +
+                    '<input type="checkbox" class="batch-select-checkbox" data-id="' + escapeHtml(album.id) + '">' +
+                    '<label class="batch-select-label" for="batch-select-' + escapeHtml(album.id) + '"></label>' +
                     '<button class="delete-btn" data-id="' + escapeHtml(album.id) + '"><i class="fas fa-trash"></i></button>';
 
 
@@ -3010,17 +3481,39 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
                     openLightbox(album);
                 });
 
+                // 批量选择复选框事件处理
+                const checkbox = albumItem.querySelector('.batch-select-checkbox');
+                const label = albumItem.querySelector('.batch-select-label');
+                if (checkbox && label) {
+                    label.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (isBatchSelectMode) {
+                            checkbox.checked = !checkbox.checked;
+                            albumItem.classList.toggle('selected', checkbox.checked);
+                            updateBatchSelection();
+                        }
+                    });
+
+                    checkbox.addEventListener('change', () => {
+                        albumItem.classList.toggle('selected', checkbox.checked);
+                        updateBatchSelection();
+                    });
+
+                    // 点击整个卡片时（如果不是批量模式）
+                    albumItem.addEventListener('click', (e) => {
+                        if (!isBatchSelectMode) {
+                            // 如果不是批量模式，打开灯箱
+                            openLightbox(album);
+                        }
+                    });
+                }
+
                 // 删除按钮事件处理
                 const deleteBtn = albumItem.querySelector('.delete-btn');
                 deleteBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (isAdmin && window._adminPassword) {
-                        // 管理员使用登录时的密码
-                        deleteAlbum(album.id, window._adminPassword);
-                    } else {
-                        // 普通用户需要输入密码
-                        showPasswordModal('delete', album.id);
-                    }
+                    // 显示删除确认对话框
+                    showDeleteConfirm(album.id, album.title);
                 });
 
                 gallery.appendChild(albumItem);
@@ -3090,6 +3583,10 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
 
             // 更新点赞信息
             updateLikeInfo(album);
+
+            // 显示弹幕（如果之前被隐藏）
+            danmuVisible = true;
+            updateToggleDanmuButton();
 
             // 设置当前索引
             currentIndex = albums.findIndex(a => a.id === album.id);
@@ -3221,11 +3718,6 @@ async function sendDanmu() {
 
     if (danmuInput) danmuInput.value = '';
 
-    // 发送后收起输入框
-    if (danmuInputContainerToggle) {
-        danmuInputContainerToggle.classList.add('collapsed');
-    }
-
     // 先本地展示一条弹幕
     if (danmuContainer) {
         const item = document.createElement('div');
@@ -3271,24 +3763,6 @@ async function sendDanmu() {
         // 更新图片变换
         function updateImageTransform() {
             lightboxImg.style.transform = 'scale(' + scale + ') translate(' + translateX + 'px, ' + translateY + 'px)';
-        }
-
-        // 切换图片缩放状态
-        function toggleImageZoom() {
-            if (!isZoomed) {
-                // 放大到2倍
-                scale = 2;
-                isZoomed = true;
-                lightboxImg.classList.add('zoomed');
-            } else {
-                // 缩小到原始大小
-                scale = 1;
-                translateX = 0;
-                translateY = 0;
-                isZoomed = false;
-                lightboxImg.classList.remove('zoomed');
-            }
-            updateImageTransform();
         }
 
         // ... 其他JavaScript函数保持不变 ...
