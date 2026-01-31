@@ -617,7 +617,7 @@ export function getHTML() {
         /* 弹幕输入区域 */
         .danmu-input-container {
             position: fixed;
-            bottom: 90px;
+            bottom: 25px;
             right: 20px;
             background: rgba(255, 255, 255, 0.9);
             border-radius: 30px;
@@ -641,7 +641,6 @@ export function getHTML() {
             background: linear-gradient(45deg, #FFD700, #FFA500);
             cursor: pointer;
             justify-content: center;
-            bottom: 25px;
         }
 
         .danmu-input-container.collapsed:hover {
@@ -1110,6 +1109,8 @@ export function getHTML() {
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s ease;
+            position: relative;
+            z-index: 5;
         }
 
         .edit-story-btn:hover {
@@ -1515,7 +1516,7 @@ export function getHTML() {
             transition: opacity 0.3s ease;
         }
 
-        .album-item:hover .batch-select-checkbox,
+        body.batch-select-mode .album-item:hover .batch-select-checkbox,
         .album-item.selected .batch-select-checkbox {
             opacity: 1;
         }
@@ -1538,7 +1539,7 @@ export function getHTML() {
             transition: opacity 0.3s ease, background 0.3s ease;
         }
 
-        .album-item:hover .batch-select-label,
+        body.batch-select-mode .album-item:hover .batch-select-label,
         .album-item.selected .batch-select-label {
             opacity: 1;
         }
@@ -3455,8 +3456,8 @@ if (loginPassword) loginPassword.addEventListener('keydown', function(e) {
             // 更新点赞信息
             updateLikeInfo(album);
 
-            // 显示弹幕（如果之前被隐藏）
-            danmuVisible = true;
+            // 保持弹幕显隐状态
+            if (danmuContainer) danmuContainer.style.display = danmuVisible ? 'block' : 'none';
             updateToggleDanmuButton();
 
             // 设置当前索引
